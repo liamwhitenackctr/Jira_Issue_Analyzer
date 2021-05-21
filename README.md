@@ -9,7 +9,7 @@ The issue I will be addressing will be the military’s request for organized an
 
 I will be addressing the issue by mining all the data available on Jira and GitHub for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics: 
 
-* Direct Trends: 
+* Direct Trends
 
 * Total Defects found in the last 4 weeks 
 
