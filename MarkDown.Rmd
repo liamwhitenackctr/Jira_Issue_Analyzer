@@ -47,15 +47,19 @@ I will be addressing the issue by mining all the data available on Jira and GitH
 •	Automated Code Coverage (in percent)  
 
 
-## Preprocessing  
-
-
-## Visualization  
-#```{r}
+## Preprocessing 
+```{r}
 GitLab %>%
   ggplot() +
-  geom_histogram(mapping = aes(x = ))
+  geom_histogram(mapping = aes(x = `Author Date (Unix Timestamp)`))
 ```
+```{r setup, include=FALSE}
+GitLab_reduced <- GitLab %>%
+    select(`Author Name`, `Author Date`, `Author Date (Unix Timestamp)`, `Committer Name`, `Committer Date`, `Comitter Date (Unix Timestamp)`, Subject)
+```
+
+## Visualization  
+
 
 ## Summary Statistics  
 
