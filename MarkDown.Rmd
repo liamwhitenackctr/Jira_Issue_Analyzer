@@ -8,6 +8,8 @@ fontsize: 11pt
 output: word_document
 ---
 
+This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attatched. 
+
 ```{r setup, include = FALSE}
 # DO NOT ALTER THIS CHUNK
 # Set knitr options
@@ -30,5 +32,41 @@ suppressPackageStartupMessages(library(broom))
 set.seed(98261936)
 ```
 
-## R Markdown
+**All data is collected from the Informedb project. The project has assigned issue resolution data on Jira and Has commit data on GitLab that was collected and organized to analyze in RStudio.**  
+
+## Question of Interest  
+The issue I will be addressing will be the military’s request for organized and presented data on projects. Software Quality Metrics are useful for analyzing trends and discovering patterns that lead to productivity. This project is being developed because the military would like reports on these metrics but doing some data analysis could show how the company can improve the efficiency of their software development.  
+I will be addressing the issue by mining all the data available on Jira and GitHub for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics:  
+•	Direct Trends  
+•	Total Defects found in the last 4 weeks  
+•	MTTR – Mean time to repair  
+•	Direct Removal Efficiency  
+•	Number of failed fix attempts (external)  
+•	Number of failed fix attempts (internal)  
+•	Change failure rate within release cycle  
+•	Automated Code Coverage (in percent)  
+
+
+## Preprocessing  
+
+
+## Visualization  
+#```{r}
+GitLab %>%
+  ggplot() +
+  geom_histogram(mapping = aes(x = ))
+```
+
+## Summary Statistics  
+
+
+## Data Analysis  
+
+
+## Conclusion  
+
+
+
+
+
 
