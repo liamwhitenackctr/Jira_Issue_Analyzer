@@ -41,4 +41,4 @@ All the data will be mined from GitHub and Jira, stored in an Excel file, and an
 
 **Constraints**
 
-Some of the parameters above are going to be very difficult to extract. Without recording the number of times an issue was addressed, it would be very complicated to try to quantify these adjustments. Specifying whether these fixes are external or internal will be it's own challenge. 
+Some of the parameters above are going to be very difficult to extract. Without recording the number of times an issue was addressed, it would be very complicated to try to quantify these adjustments. Specifying whether these fixes are external or internal will be it's own challenge. Several metrics will be especially hard to find. Among these are Number of failed fix attempts, Change failure rate, and automated code coverage.
