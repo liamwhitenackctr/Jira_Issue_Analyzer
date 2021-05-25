@@ -11,7 +11,6 @@ output: word_document
 This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attatched. 
 
 ```{r setup, include = FALSE}
-# DO NOT ALTER THIS CHUNK
 # Set knitr options
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -28,6 +27,8 @@ suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(infer))
 suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
+GitLab <- read_csv("Informedb Gitlab Data.csv")
+Jira <- read_csv("Informedb Jira Data.csv")
 # Set seed
 set.seed(98261936)
 ```
@@ -49,13 +50,48 @@ I will be addressing the issue by mining all the data available on Jira and GitH
 
 ## Preprocessing 
 ```{r}
-GitLab %>%
-  ggplot() +
-  geom_histogram(mapping = aes(x = `Author Date (Unix Timestamp)`))
-```
-```{r setup, include=FALSE}
 GitLab_reduced <- GitLab %>%
-    select(`Author Name`, `Author Date`, `Author Date (Unix Timestamp)`, `Committer Name`, `Committer Date`, `Comitter Date (Unix Timestamp)`, Subject)
+    mutate(
+      a_unix = `Author Date (Unix Timestamp)`,
+      a_date = `Author Date`,
+      a_name = `Author Name`,
+      a_email = `Author Email`,
+      c_unix = `Comitter Date (Unix Timestamp)`,
+      c_date = `Committer Date`,
+      c_name = `Committer Name`,
+      c_email = `Committer Email`
+    )
+```
+```{r}
+Jira_reduced <- Jira %>%
+    mutate(
+      priority = recode(
+        Priority,
+          `1 - Trivial` = "R1",
+          `2 - Minor` = "R1",
+          `3 - Major` = "R2",
+          `4 - Critical` = "R3",
+          `5 - Blocker` = "R4"
+      ),
+      time_spent = `Time Spent (hours)`,
+      summary = Summary,
+      parent = `Parent id`,
+      issue = `Issue id`,
+      type = `Issue Type`,
+      date_created = Created,
+      unix_created = `Created (in Unix)`,
+      date_updated = `Updated`,
+      unix_updated = `Updated (in Unix)`,
+      date_resolved = `Resolved`
+    )
+```
+```{r}
+GitLab_reduced <- GitLab_reduced %>%
+    select(`a_date`, `a_name`, `a_unix`, `c_date`, `c_name`, `c_unix`, Subject)
+```
+```{r}
+Jira_reduced <- Jira_reduced %>%
+    select(priority, time_spent, date_created, date_updated, date_resolved, unix_created, unix_updated, parent, type, Assignee, Reporter, Status, Summary)
 ```
 
 ## Visualization  
