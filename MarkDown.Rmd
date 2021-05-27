@@ -29,8 +29,6 @@ suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 GitLab <- read_csv("Informedb Gitlab Data.csv")
 Jira <- read_csv("Informedb Jira Data.csv")
-# Set seed
-set.seed(98261936)
 ```
 
 **All data is collected from the Informedb project. The project has assigned issue resolution data on Jira and Has commit data on GitLab that was collected and organized to analyze in RStudio.**  
@@ -50,7 +48,7 @@ I will be addressing the issue by mining all the data available on Jira and GitH
 
 ## Preprocessing 
 ```{r}
-GitLab_reduced <- GitLab %>%
+GitLab_bigger <- GitLab %>%
     mutate(
       a_unix = `Author Date (Unix Timestamp)`,
       a_date = `Author Date`,
@@ -63,7 +61,7 @@ GitLab_reduced <- GitLab %>%
     )
 ```
 ```{r}
-Jira_reduced <- Jira %>%
+Jira_bigger <- Jira %>%
     mutate(
       priority = recode(
         Priority,
@@ -86,18 +84,51 @@ Jira_reduced <- Jira %>%
     )
 ```
 ```{r}
-GitLab_reduced <- GitLab_reduced %>%
+GitLab_reduced <- GitLab_bigger %>%
     select(`a_date`, `a_name`, `a_unix`, `c_date`, `c_name`, `c_unix`, Subject)
 ```
 ```{r}
-Jira_reduced <- Jira_reduced %>%
+Jira_reduced <- Jira_bigger %>%
     select(priority, time_spent, date_created, date_updated, date_resolved, unix_created, unix_updated, parent, type, Assignee, Reporter, Status, Summary)
 ```
+This code block renames and selects the columns that will be used for practicality. 
 
 ## Visualization  
+The project board has not been used since last March, but the distribution of 
+```{r}
+Jira_reduced %>%
+  ggplot() + 
+  geom_histogram(aes(x = date_created), bins = 77)
+```
+
+## Summary Statistics
+```{r}
+Jira_reduced %>%
+  summarise(
+    Number_of_weeks = (
+      max(unix_updated)-min(unix_created))*(1/(60*60*24*7))
+  )
+```
+```{r}
+Jira_reduced %>%
+  group_by(priority) %>%
+  summarise( 
+    Total_defects = n(),
+    Total_defects_in_four_weeks = n() / (361.0309 / 4),
+    MTTR = mean(date_resolved - date_created)
+    
+  )
+```
+** Total Defects found in the last 4 weeks: 
+The Informedb Jira page has not been used over the last 4 weeks, so I cannot tell how many issues were found. When the data was being recorded, there were a total of 3862 total issues found. 3600 were R1, 94 were R2, 68 were R3, and 73 were R4. That means that the mean number of each issues found over a four week span would be R1-46.86, R2-1.22, R3-0.89, R4-0.95.
+**MTTR:
+The average amount of time spent on each issue is 2250.65 hours (94 days), but many of the R1 issues are abandoned or not updated. The average spent from creation of an issue to its resolution is 1333.86 hours (56 days). The mean time to repair each issue in days would be R1-94, R2-31, R3-62, R4-143. 
+**
+```{r}
+
+```
 
 
-## Summary Statistics  
 
 
 ## Data Analysis  
