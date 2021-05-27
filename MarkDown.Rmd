@@ -60,11 +60,12 @@ GitLab_bigger <- GitLab %>%
       c_email = `Committer Email`
     )
 ```
+
 ```{r}
 Jira_bigger <- Jira %>%
     mutate(
       priority = recode(
-        Priority,
+       Priority,
           `1 - Trivial` = "R1",
           `2 - Minor` = "R1",
           `3 - Major` = "R2",
@@ -80,7 +81,9 @@ Jira_bigger <- Jira %>%
       unix_created = `Created (in Unix)`,
       date_updated = `Updated`,
       unix_updated = `Updated (in Unix)`,
-      date_resolved = `Resolved`
+      date_resolved = `Resolved`,
+      unix_resolved = `Resolved (in Unix)`,
+      repair_time = `Repair Time (seconds)`
     )
 ```
 ```{r}
@@ -89,17 +92,12 @@ GitLab_reduced <- GitLab_bigger %>%
 ```
 ```{r}
 Jira_reduced <- Jira_bigger %>%
-    select(priority, time_spent, date_created, date_updated, date_resolved, unix_created, unix_updated, parent, type, Assignee, Reporter, Status, Summary)
+    select(priority, time_spent, repair_time, date_created, date_updated, date_resolved, unix_created, unix_updated, unix_resolved, parent, type, Assignee, Reporter, Status, Summary)
 ```
 This code block renames and selects the columns that will be used for practicality. 
 
 ## Visualization  
 The project board has not been used since last March, but the distribution of 
-```{r}
-Jira_reduced %>%
-  ggplot() + 
-  geom_histogram(aes(x = date_created), bins = 77)
-```
 
 ## Summary Statistics
 ```{r}
@@ -113,9 +111,9 @@ Jira_reduced %>%
 Jira_reduced %>%
   group_by(priority) %>%
   summarise( 
-    Total_defects = n(),
-    Total_defects_in_four_weeks = n() / (361.0309 / 4),
-    MTTR = mean(date_resolved - date_created)
+    defects = n(),
+    defects_in_four_weeks = n() / (361.0309 / 4),
+    MTTR_days = (mean((repair_time), na.rm = TRUE))/(60*60*24)
     
   )
 ```
