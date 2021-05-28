@@ -72,6 +72,16 @@ Jira_bigger <- Jira %>%
           `4 - Critical` = "R3",
           `5 - Blocker` = "R4"
       ),
+      Completed = recode(
+        Status,
+        Resolved = 1,
+        Closed = 0,
+        `In Progress` = 0,
+        `Ready For Review` = 0,
+        `Ready For Test` = 0,
+        Reopened = 0,
+        .default = 0
+      ),
       time_spent = `Time Spent (hours)`,
       summary = Summary,
       parent = `Parent id`,
@@ -92,7 +102,7 @@ GitLab_reduced <- GitLab_bigger %>%
 ```
 ```{r}
 Jira_reduced <- Jira_bigger %>%
-    select(priority, time_spent, repair_time, date_created, date_updated, date_resolved, unix_created, unix_updated, unix_resolved, parent, type, Assignee, Reporter, Status, Summary)
+    select(priority, time_spent, repair_time, date_created, date_updated, date_resolved, unix_created, unix_updated, unix_resolved, parent, type, Assignee, Reporter, Completed, Status, Summary)
 ```
 This code block renames and selects the columns that will be used for practicality. 
 
@@ -101,29 +111,25 @@ The project board has not been used since last March, but the distribution of
 
 ## Summary Statistics
 ```{r}
-Jira_reduced %>%
-  summarise(
-    Number_of_weeks = (
-      max(unix_updated)-min(unix_created))*(1/(60*60*24*7))
-  )
+Number_of_weeks <- (max(Jira_reduced$unix_updated) - min(Jira_reduced$unix_created)) * (1 / (60 * 60 * 24 * 7))
 ```
 ```{r}
 Jira_reduced %>%
   group_by(priority) %>%
   summarise( 
     defects = n(),
-    defects_in_four_weeks = n() / (361.0309 / 4),
-    MTTR_days = (mean((repair_time), na.rm = TRUE))/(60*60*24)
-    
+    defects_in_four_weeks = n() / (Number_of_weeks / 4),
+    MTTR_days = (mean((repair_time), na.rm = TRUE))/(60*60*24),
+    DRE = sum(Completed) / n()
   )
 ```
-** Total Defects found in the last 4 weeks: 
-The Informedb Jira page has not been used over the last 4 weeks, so I cannot tell how many issues were found. When the data was being recorded, there were a total of 3862 total issues found. 3600 were R1, 94 were R2, 68 were R3, and 73 were R4. That means that the mean number of each issues found over a four week span would be R1-46.86, R2-1.22, R3-0.89, R4-0.95.
-**MTTR:
-The average amount of time spent on each issue is 2250.65 hours (94 days), but many of the R1 issues are abandoned or not updated. The average spent from creation of an issue to its resolution is 1333.86 hours (56 days). The mean time to repair each issue in days would be R1-94, R2-31, R3-62, R4-143. 
-**
 ```{r}
-
+GitLab_reduced %>%
+  ggplot() +
+  geom_histogram(aes(x = c_date))
+Jira_reduced %>%
+  ggplot() +
+  geom_histogram(aes(x = date_updated))
 ```
 
 
