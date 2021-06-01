@@ -118,6 +118,7 @@ MMP_Jira_bigger <- MMP_Jira %>%
       completed = recode(
         Status,
         Resolved = 1,
+        Done = 1,
         Closed = 0,
         `In Progress` = 0,
         `Ready For Review` = 0,
@@ -152,7 +153,9 @@ The project board has not been used since last March, but the distribution of
 
 ## Summary Statistics
 ```{r}
-Number_of_weeks <- (max(Informedb_Jira_reduced$unix_updated) - min(Informedb_Jira_reduced$unix_created)) * (1 / (60 * 60 * 24 * 7))
+Number_of_weeks <- (max(Informedb_Jira_reduced$date_updated) - min(Informedb_Jira_reduced$date_created))/7
+Number_of_weeks
+Number_of_weeks <- as.numeric(Number_of_weeks)
 ```
 ```{r}
 Informedb_Jira_reduced %>%
@@ -161,16 +164,16 @@ Informedb_Jira_reduced %>%
     defects = n(),
     defects_in_four_weeks = n() / (Number_of_weeks / 4),
     MTTR_days = (mean((repair_time), na.rm = TRUE)),
-    DRE = sum(Completed) / n()
+    DRE = sum(completed) / n()
   )
 ```
 ```{r}
 Informedb_GitLab_reduced %>%
   ggplot() +
-  geom_histogram(aes(x = c_unix))
+  geom_histogram(aes(x = c_date))
 Informedb_Jira_reduced %>%
   ggplot() +
-  geom_histogram(aes(x = unix_updated, fill = priority))
+  geom_histogram(aes(x = date_updated, fill = priority))
 ```
 
 
