@@ -27,8 +27,9 @@ suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(infer))
 suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
-GitLab <- read_csv("Informedb Gitlab Data.csv")
-Jira <- read_csv("Informedb Jira Data.csv")
+Informedb_GitLab <- read_csv("Informedb Gitlab Data.csv")
+Informedb_Jira <- read_csv("Informedb Jira Data.csv")
+MMP_Jira <- read_csv("MMP Jira Data.csv")
 ```
 
 **All data is collected from the Informedb project. The project has assigned issue resolution data on Jira and Has commit data on GitLab that was collected and organized to analyze in RStudio.**  
@@ -48,7 +49,7 @@ I will be addressing the issue by mining all the data available on Jira and GitH
 
 ## Preprocessing 
 ```{r}
-GitLab_bigger <- GitLab %>%
+Informedb_GitLab_bigger <- Informedb_GitLab %>%
     mutate(
       a_unix = `Author Date (Unix Timestamp)`,
       a_date = `Author Date`,
@@ -59,10 +60,11 @@ GitLab_bigger <- GitLab %>%
       c_name = `Committer Name`,
       c_email = `Committer Email`
     )
+Informedb_GitLab_reduced <- Informedb_GitLab_bigger %>%
+    select(`a_date`, `a_name`, `a_unix`, `c_date`, `c_name`, `c_unix`, Subject)
 ```
-
 ```{r}
-Jira_bigger <- Jira %>%
+Informedb_Jira_bigger <- Informedb_Jira %>%
     mutate(
       priority = recode(
        Priority,
@@ -72,7 +74,7 @@ Jira_bigger <- Jira %>%
           `4 - Critical` = "R3",
           `5 - Blocker` = "R4"
       ),
-      Completed = recode(
+      completed = recode(
         Status,
         Resolved = 1,
         Closed = 0,
@@ -82,27 +84,66 @@ Jira_bigger <- Jira %>%
         Reopened = 0,
         .default = 0
       ),
-      time_spent = `Time Spent (hours)`,
-      summary = Summary,
-      parent = `Parent id`,
-      issue = `Issue id`,
-      type = `Issue Type`,
-      date_created = Created,
-      unix_created = `Created (in Unix)`,
-      date_updated = `Updated`,
-      unix_updated = `Updated (in Unix)`,
-      date_resolved = `Resolved`,
-      unix_resolved = `Resolved (in Unix)`,
-      repair_time = `Repair Time (seconds)`
+      Parent = `Parent id`,
+      Issue = `Issue id`,
+      Type = `Issue Type`,
+      date_created = as.Date(Created, format = "%m/%d/%Y"),
+      date_updated = as.Date(Updated, format = "%m/%d/%Y"),
+      date_resolved = as.Date(Resolved, format = "%m/%d/%Y"),
+      time_spent = date_updated - date_created,
+      repair_time = date_resolved - date_created
     )
+Informedb_Jira_reduced <- Informedb_Jira_bigger %>%
+  select(
+    priority,
+    completed,
+    date_created,
+    date_updated,
+    date_resolved,
+    time_spent,
+    repair_time
+  )
 ```
 ```{r}
-GitLab_reduced <- GitLab_bigger %>%
-    select(`a_date`, `a_name`, `a_unix`, `c_date`, `c_name`, `c_unix`, Subject)
-```
-```{r}
-Jira_reduced <- Jira_bigger %>%
-    select(priority, time_spent, repair_time, date_created, date_updated, date_resolved, unix_created, unix_updated, unix_resolved, parent, type, Assignee, Reporter, Completed, Status, Summary)
+MMP_Jira_bigger <- MMP_Jira %>%
+    mutate(
+      priority = recode(
+       Priority,
+          `1 - Trivial` = "R1",
+          `2 - Minor` = "R1",
+          `3 - Major` = "R2",
+          `4 - Critical` = "R3",
+          `5 - Blocker` = "R4"
+      ),
+      completed = recode(
+        Status,
+        Resolved = 1,
+        Closed = 0,
+        `In Progress` = 0,
+        `Ready For Review` = 0,
+        `Ready For Test` = 0,
+        Reopened = 0,
+        .default = 0
+      ),
+      Parent = `Parent id`,
+      Issue = `Issue id`,
+      Type = `Issue Type`,
+      date_created = as.Date(Created, format = "%m/%d/%Y"),
+      date_updated = as.Date(Updated, format = "%m/%d/%Y"),
+      date_resolved = as.Date(Resolved, format = "%m/%d/%Y"),
+      time_spent = date_updated - date_created,
+      repair_time = date_resolved - date_created
+    )
+MMP_Jira_reduced <- MMP_Jira_bigger %>%
+  select(
+    priority,
+    completed,
+    date_created,
+    date_updated,
+    date_resolved,
+    time_spent,
+    repair_time
+  )
 ```
 This code block renames and selects the columns that will be used for practicality. 
 
@@ -111,23 +152,23 @@ The project board has not been used since last March, but the distribution of
 
 ## Summary Statistics
 ```{r}
-Number_of_weeks <- (max(Jira_reduced$unix_updated) - min(Jira_reduced$unix_created)) * (1 / (60 * 60 * 24 * 7))
+Number_of_weeks <- (max(Informedb_Jira_reduced$unix_updated) - min(Informedb_Jira_reduced$unix_created)) * (1 / (60 * 60 * 24 * 7))
 ```
 ```{r}
-Jira_reduced %>%
+Informedb_Jira_reduced %>%
   group_by(priority) %>%
   summarise( 
     defects = n(),
     defects_in_four_weeks = n() / (Number_of_weeks / 4),
-    MTTR_days = (mean((repair_time), na.rm = TRUE))/(60*60*24),
+    MTTR_days = (mean((repair_time), na.rm = TRUE)),
     DRE = sum(Completed) / n()
   )
 ```
 ```{r}
-GitLab_reduced %>%
+Informedb_GitLab_reduced %>%
   ggplot() +
   geom_histogram(aes(x = c_unix))
-Jira_reduced %>%
+Informedb_Jira_reduced %>%
   ggplot() +
   geom_histogram(aes(x = unix_updated, fill = priority))
 ```
