@@ -126,10 +126,10 @@ Jira_reduced %>%
 ```{r}
 GitLab_reduced %>%
   ggplot() +
-  geom_histogram(aes(x = c_date))
+  geom_histogram(aes(x = c_unix))
 Jira_reduced %>%
   ggplot() +
-  geom_histogram(aes(x = date_updated))
+  geom_histogram(aes(x = unix_updated, fill = priority))
 ```
 
 
