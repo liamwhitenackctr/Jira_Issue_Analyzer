@@ -9,7 +9,7 @@ output:
   word_document
 ---
 
-This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attatched. 
+This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attached. 
 
 ```{r setup, include = FALSE}
 # Set knitr options
@@ -141,21 +141,14 @@ Jira_reduced %>%
   )
 ```
 This graph shows some summary statistics, most of which are estimated to a degree. Each parameter is calculated for each priority level.  
-*Defects- This column shows the total number of defects.  
-*Defects in four weeks- This column shows the average number of defects over four weeks.  
-*MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is "Resolved").  
-*DRE (direct removal efficiency)- This column shows the number of total issues divided by the number of total issues.  
+Defects- This column shows the total number of defects.  
+Defects in four weeks- This column shows the average number of defects over four weeks.  
+MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is "Resolved").  
+DRE (direct removal efficiency)- This column shows the number of total issues divided by the number of total issues.  
+
 ```{r}
 Jira_reduced %>%
-  ggplot() +
-  geom_histogram(aes(x = date_updated, fill = Priority), bins = 20)
+  ggplot()+
+  geom_point(aes(x = date_updated, y = repair_time, color = Priority))
 ```
-```{r}
-GitLab_reduced %>%
-  ggplot() +
-  geom_histogram(aes(x = committer_date), bins = 32)
-```
-
-
-
 
