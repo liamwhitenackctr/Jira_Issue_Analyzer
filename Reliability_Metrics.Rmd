@@ -28,8 +28,9 @@ suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(infer))
 suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
+suppressPackageStartupMessages(library(rlang))
 GitLab <- read_csv("Informedb Gitlab Data.csv")
-Jira <- read_csv("Informedb Jira Data.csv")
+Jira <- read_csv("Informedb Jira Data 2.csv")
 ```
 
 **All data is collected from the Informedb project. The project has assigned issue resolution data on Jira and Has commit data on GitLab that was collected and organized to analyze in RStudio.**  
@@ -65,6 +66,39 @@ for(i in 1:length(Jira$Status)){
         if(Jira$Status[i] == "Resolved"){
           Jira$Resolved[i]<-Jira$Updated[i]
         }
+}
+```
+```{r}
+Jira_Sprints <- Jira %>%
+  select(
+    Sprint,
+    Sprint_1,
+    Sprint_2,
+    Sprint_3,
+    Sprint_4
+  )
+```
+
+```{r}
+for(i in 1:length(Jira$Status)){
+  if(is.na(Jira$Sprint_4[i]) == FALSE){
+  Jira$n_sprints[i]<-5
+  }
+  else if(is.na(Jira$Sprint_3[i]) == FALSE){
+    Jira$n_sprints[i]<-4
+  }
+  else if(is.na(Jira$Sprint_2[i]) == FALSE){
+    Jira$n_sprints[i]<-3
+  }
+  else if(is.na(Jira$Sprint_1[i]) == FALSE){
+    Jira$n_sprints[i]<-2
+  }
+  else if(is.na(Jira$Sprint[i]) == FALSE){
+    Jira$n_sprints[i]<-1
+  }
+  else{
+    Jira$n_sprints[i] <-0
+  }
 }
 ```
 This code block updates the "Resolved" column. The resolved column only contains a value if the row's value in the Status column is "Resolved". If the logical statement is TRUE then the Resolved column's value is the same as the Updated column.
@@ -104,6 +138,8 @@ Jira <- Jira %>%
       time_spent = date_updated - date_created, # create the time_spent parameter, which is computed by finding the difference between the date of creation and last day updated
       repair_time = date_resolved - date_created # create the repair time parameter, which is computed by finding the difference between the date of creation and day resolved
     )
+```
+```{r}
 Jira_reduced <- Jira %>%
   select(
     Priority,
@@ -112,7 +148,9 @@ Jira_reduced <- Jira %>%
     date_updated,
     date_resolved,
     time_spent,
-    repair_time
+    repair_time,
+    Assignee,
+    n_sprints
   )
 ```
 This code block renames columns and makes them usable. At the end, it makes a new dataset with only the necessary columns. 
@@ -148,7 +186,12 @@ DRE (direct removal efficiency)- This column shows the number of total issues di
 
 ```{r}
 Jira_reduced %>%
-  ggplot()+
-  geom_point(aes(x = date_updated, y = repair_time, color = Priority))
+  group_by(n_sprints) %>%
+  summarise( 
+    Defects = n(),
+    `Defects in four weeks` = n() / (Number_of_weeks / 4),
+    `MTTR` = (mean((repair_time), na.rm = TRUE)),
+    DRE = sum(completed) / n()
+  )
 ```
 
