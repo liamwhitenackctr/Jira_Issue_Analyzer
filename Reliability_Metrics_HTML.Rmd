@@ -1,0 +1,160 @@
+---
+title: "Software Quality Metrics Interactive HTML"
+author: "Liam Whitenack"
+date: "`r Sys.Date()`"
+documentclass: article
+geometry: margin=1in
+fontsize: 11pt
+output: flexdashboard::flex_dashboard
+---
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = TRUE,
+  fig.width = 5,
+  fig.asp = 0.618,
+  out.width = "70%",
+  dpi = 120,
+  fig.align = "center",
+  cache = FALSE
+)
+library(tidyverse)
+library(plotly)
+library(crosstalk)
+Jira <- read_csv("Informedb Jira Data.csv")
+```
+```{r, echo= FALSE}
+for(i in 1:length(Jira$Status)){
+  Jira$Resolved[i]<-NA
+}
+for(i in 1:length(Jira$Status)){
+        if(Jira$Status[i] == "Resolved"){
+          Jira$Resolved[i]<-Jira$Updated[i]
+        }
+}
+```
+```{r, echo= FALSE}
+Jira_Sprints <- Jira %>%
+  select(
+    Sprint,
+    Sprint_1,
+    Sprint_2,
+    Sprint_3,
+    Sprint_4
+  )
+```
+```{r, echo= FALSE}
+for(i in 1:length(Jira$Status)){
+  if(is.na(Jira$Sprint_4[i]) == FALSE){
+  Jira$n_sprints[i]<-5
+  }
+  else if(is.na(Jira$Sprint_3[i]) == FALSE){
+    Jira$n_sprints[i]<-4
+  }
+  else if(is.na(Jira$Sprint_2[i]) == FALSE){
+    Jira$n_sprints[i]<-3
+  }
+  else if(is.na(Jira$Sprint_1[i]) == FALSE){
+    Jira$n_sprints[i]<-2
+  }
+  else if(is.na(Jira$Sprint[i]) == FALSE){
+    Jira$n_sprints[i]<-1
+  }
+  else{
+    Jira$n_sprints[i] <-0
+  }
+}
+```
+```{r, echo= FALSE}
+Jira <- Jira %>%
+    mutate(
+      Priority = recode(
+       Priority,
+          `1 - Trivial` = "R1",
+          `Trivial` = "R1",
+          `2 - Minor` = "R1",
+          `Minor` = "R1",
+          `3 - Major` = "R2",
+          `Major` = "R2",
+          `4 - Critical` = "R3",
+          `Critical` = "R3",
+          `5 - Blocker` = "R4",
+          `Blocker` = "R4",
+      ), # Rename each value to R1, R2, R3, and R4, the military's preferred terms.
+      completed = recode(
+        Status,
+        Resolved = 1,
+        Done = 0,
+        Closed = 0,
+        `In Progress` = 0,
+        `Ready For Review` = 0,
+        `Ready For Test` = 0,
+        Reopened = 0,
+        .default = 0
+      ), # set the value of each resolved issue to 1 for computational purposes
+      Parent = `Parent id`,
+      Issue = `Issue id`,
+      Type = `Issue Type`,
+      date_created = as.Date(strptime(Created, format = "%m/%d/%Y %H:%M")),
+      date_updated = as.Date(strptime(Updated, format = "%m/%d/%Y %H:%M")),
+      date_resolved = as.Date(strptime(Resolved, format = "%m/%d/%Y %H:%M")), 
+      # read columns as dates instead of characters
+      time_spent = date_updated - date_created, 
+      # create the time_spent parameter, which is computed by finding 
+      # the difference between the date of creation and last day updated
+      repair_time = date_resolved - date_created 
+      # create the repair time parameter, which is computed by finding 
+      # the difference between the date of creation and day resolved
+    )
+```
+```{r, echo= FALSE}
+Jira_reduced <- Jira %>%
+  select(
+    Priority,
+    completed,
+    date_created,
+    date_updated,
+    date_resolved,
+    time_spent,
+    repair_time,
+    Assignee,
+    n_sprints
+  )
+```
+```{r, echo= FALSE}
+Shared_Jira <- SharedData$new(Jira_reduced)
+```
+
+Column
+-------------------------------------
+### Priority Boxplot
+```{r, echo= FALSE}
+b <- Shared_Jira %>%
+  ggplot() +
+  geom_boxplot(aes(x = reorder(Priority, repair_time, FUN=median), y = repair_time, fill = Priority)) +
+  labs(x = "Pokemon Type") + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+```{r, echo= FALSE}
+ggplotly(b)
+```
+
+Column
+-------------------------------------
+### Scatterplot
+```{r, echo= FALSE}
+p <- Shared_Jira %>%
+  ggplot() +
+   geom_point(
+     mapping = aes(x = date_created, y = repair_time, color = Priority)
+   )
+```
+```{r, echo= FALSE}
+ggplotly(p)
+```
+
+SidebarName {.sidebar}
+----------------------
+```{r, echo = FALSE}
+filter_select("Priority", "Priority", Shared_Jira, ~Priority)
+```
