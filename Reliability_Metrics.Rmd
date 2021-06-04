@@ -6,7 +6,22 @@ documentclass: article
 geometry: margin=1in
 fontsize: 11pt
 output:
-  word_document
+  pdf_document:
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    dev: pdf
+    highlight: tango
+  html_document:
+    theme: default
+    self_contained: true
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    smart: true
+    dev: svg
 ---
 
 This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attached. 
@@ -30,7 +45,7 @@ suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 suppressPackageStartupMessages(library(rlang))
 GitLab <- read_csv("Informedb Gitlab Data.csv")
-Jira <- read_csv("Informedb Jira Data 2.csv")
+Jira <- read_csv("Informedb Jira Data.csv")
 ```
 
 **All data is collected from the Informedb project. The project has assigned issue resolution data on Jira and Has commit data on GitLab that was collected and organized to analyze in RStudio.**  
@@ -50,8 +65,11 @@ I will be addressing the issue by mining all the data available on Jira and GitH
 ```{r}
 GitLab <- GitLab %>%
   mutate(
-    author_date = as.Date(strptime(author_date, format = "%a %b %d %H:%M:%S %Y")),
-    committer_date = as.Date(strptime(committer_date, format = "%a %b %d %H:%M:%S %Y")) # read columns as dates instead of characters
+    author_date = as.Date(strptime(author_date, 
+                                   format = "%a %b %d %H:%M:%S %Y")),
+    committer_date = as.Date(strptime(committer_date, 
+                                      format = "%a %b %d %H:%M:%S %Y")) 
+    # read columns as dates instead of characters
   )
 
 GitLab_reduced <- GitLab %>%
@@ -62,6 +80,9 @@ GitLab_reduced <- GitLab %>%
 ```
 This code block takes all of the data from GitLab and makes it usable. It then outputs it all into a much simpler dataset which only contains the columns being used. 
 ```{r}
+for(i in 1:length(Jira$Status)){
+  Jira$Resolved[i]<-NA
+}
 for(i in 1:length(Jira$Status)){
         if(Jira$Status[i] == "Resolved"){
           Jira$Resolved[i]<-Jira$Updated[i]
@@ -134,9 +155,14 @@ Jira <- Jira %>%
       Type = `Issue Type`,
       date_created = as.Date(strptime(Created, format = "%m/%d/%Y %H:%M")),
       date_updated = as.Date(strptime(Updated, format = "%m/%d/%Y %H:%M")),
-      date_resolved = as.Date(strptime(Resolved, format = "%m/%d/%Y %H:%M")), # read columns as dates instead of characters
-      time_spent = date_updated - date_created, # create the time_spent parameter, which is computed by finding the difference between the date of creation and last day updated
-      repair_time = date_resolved - date_created # create the repair time parameter, which is computed by finding the difference between the date of creation and day resolved
+      date_resolved = as.Date(strptime(Resolved, format = "%m/%d/%Y %H:%M")), 
+      # read columns as dates instead of characters
+      time_spent = date_updated - date_created, 
+      # create the time_spent parameter, which is computed by finding 
+      # the difference between the date of creation and last day updated
+      repair_time = date_resolved - date_created 
+      # create the repair time parameter, which is computed by finding 
+      # the difference between the date of creation and day resolved
     )
 ```
 ```{r}
@@ -179,11 +205,10 @@ Jira_reduced %>%
   )
 ```
 This graph shows some summary statistics, most of which are estimated to a degree. Each parameter is calculated for each priority level.  
-Defects- This column shows the total number of defects.  
-Defects in four weeks- This column shows the average number of defects over four weeks.  
-MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is "Resolved").  
-DRE (direct removal efficiency)- This column shows the number of total issues divided by the number of total issues.  
-
+•	Defects- This column shows the total number of defects.  
+•	Defects in four weeks- This column shows the average number of defects over four weeks.  
+•	MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is “Resolved”).  
+•	DRE (direct removal efficiency)- This column shows the number of total issues resolved divided by the number of total issues. 
 ```{r}
 Jira_reduced %>%
   group_by(n_sprints) %>%
