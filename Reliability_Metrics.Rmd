@@ -44,6 +44,7 @@ suppressPackageStartupMessages(library(infer))
 suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 suppressPackageStartupMessages(library(rlang))
+suppressPackageStartupMessages(library(plotly))
 GitLab <- read_csv("Informedb Gitlab Data.csv")
 Jira <- read_csv("Informedb Jira Data.csv")
 ```
@@ -150,6 +151,28 @@ Jira <- Jira %>%
         Reopened = 0,
         .default = 0
       ), # set the value of each resolved issue to 1 for computational purposes
+      open = recode(
+        Status,
+        Resolved = 0,
+        Done = 1,
+        Closed = 0,
+        `In Progress` = 1,
+        `Ready For Review` = 1,
+        `Ready For Test` = 1,
+        Reopened = 1,
+        .default = 0
+      ), # set the value of each resolved issue to 1 for computational purposes
+      failed_fix = recode(
+        Status,
+        Resolved = 0,
+        Done = 0,
+        Closed = 0,
+        `In Progress` = 0,
+        `Ready For Review` = 0,
+        `Ready For Test` = 0,
+        Reopened = 1,
+        .default = 0
+      ), # set the value of each resolved issue to 1 for computational purposes
       Parent = `Parent id`,
       Issue = `Issue id`,
       Type = `Issue Type`,
@@ -170,6 +193,8 @@ Jira_reduced <- Jira %>%
   select(
     Priority,
     completed,
+    open,
+    failed_fix,
     date_created,
     date_updated,
     date_resolved,
@@ -185,7 +210,7 @@ This code block renames columns and makes them usable. At the end, it makes a ne
 Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created))/7
 Number_of_weeks <- as.numeric(Number_of_weeks)
 ```
-This code block caluclates the number of weeks.
+This code block calculates the number of weeks.
 ```{r}
 Jira_reduced %>%
   ggplot() +
@@ -195,14 +220,17 @@ Jira_reduced %>%
 ```
 This graph shows the Direct Trends as they are shown in the PowerPoint from the Navy. This graph shows the number of different issues reported, with the colors indicating the Priority of the issue. 
 ```{r}
-Jira_reduced %>%
+Summary_Statistics <- Jira_reduced %>%
   group_by(Priority) %>%
   summarise( 
     Defects = n(),
     `Defects in four weeks` = n() / (Number_of_weeks / 4),
     `MTTR` = (mean((repair_time), na.rm = TRUE)),
-    DRE = sum(completed) / n()
+    FFA = sum(failed_fix),
+    DRE = sum(completed) / n(),
+    open = sum(open)
   )
+Summary_Statistics
 ```
 This graph shows some summary statistics, most of which are estimated to a degree. Each parameter is calculated for each priority level.  
 •	Defects- This column shows the total number of defects.  
