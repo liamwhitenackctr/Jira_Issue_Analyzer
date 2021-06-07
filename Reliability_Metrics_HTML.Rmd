@@ -122,7 +122,14 @@ Jira_reduced <- Jira %>%
   )
 ```
 ```{r, echo= FALSE}
-Shared_Jira <- SharedData$new(Jira_reduced)
+Q1 <- quantile(Jira_reduced$time_spent, .25)
+Q3 <- quantile(Jira_reduced$time_spent, .75)
+IQR <- IQR(Jira_reduced$time_spent)
+no_outliers_Jira_reduced <- subset(Jira_reduced, Jira_reduced$time_spent> 
+                                     (Q1 - 1.5*IQR) & Jira_reduced$time_spent< (Q3 + 1.5*IQR))
+```
+```{r, echo= FALSE}
+Shared_Jira <- SharedData$new(no_outliers_Jira_reduced)
 ```
 
 Column
@@ -132,7 +139,7 @@ Column
 b <- Shared_Jira %>%
   ggplot() +
   geom_boxplot(aes(x = reorder(Priority, repair_time, FUN=median), y = repair_time, fill = Priority)) +
-  labs(x = "Pokemon Type") + 
+  labs(x = "Priority Level", y = "Repair Time") + 
   theme(axis.text.x = element_text(angle = 90))
 ```
 ```{r, echo= FALSE}
@@ -147,7 +154,8 @@ p <- Shared_Jira %>%
   ggplot() +
    geom_point(
      mapping = aes(x = date_created, y = repair_time, color = Priority)
-   )
+   ) +
+  labs(x = "Date Created", y = "Repair Time")
 ```
 ```{r, echo= FALSE}
 ggplotly(p)
@@ -158,3 +166,7 @@ SidebarName {.sidebar}
 ```{r, echo = FALSE}
 filter_select("Priority", "Priority", Shared_Jira, ~Priority)
 ```
+```{r, echo=FALSE}
+outliers <- nrow(Jira_reduced) - nrow(no_outliers_Jira_reduced)
+```
+
