@@ -54,10 +54,10 @@ Jira <- read_csv("Informedb Jira Data.csv")
 ## Question of Interest  
 The issue I will be addressing will be the military’s request for organized and presented data on projects. Software Quality Metrics are useful for analyzing trends and discovering patterns that lead to productivity. This project is being developed because the military would like reports on these metrics but doing some data analysis could show how the company can improve the efficiency of their software development.  
 I will be addressing the issue by mining all the data available on Jira and GitHub for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics:  
-•	Direct Trends  
+•	defect Trends  
 •	Total Defects found in the last 4 weeks  
 •	MTTR – Mean time to repair  
-•	Direct Removal Efficiency  
+•	defect Removal Efficiency  
 •	Number of failed fix attempts (external)  
 •	Number of failed fix attempts (internal)  
 •	Change failure rate within release cycle  
@@ -81,17 +81,39 @@ GitLab_reduced <- GitLab %>%
 ```
 This code block takes all of the data from GitLab and makes it usable. It then outputs it all into a much simpler dataset which only contains the columns being used. 
 ```{r}
-for(i in 1:length(Jira$Status)){
-  Jira$Resolved[i]<-NA
+n <- 0
+counter <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter] == "Pre-Release Bug"){
+    my_vec <- counter
+    n = 1
+    counter = counter + 1
+  }
 }
-for(i in 1:length(Jira$Status)){
-        if(Jira$Status[i] == "Resolved"){
-          Jira$Resolved[i]<-Jira$Updated[i]
+for(i in counter:length(Jira$`Issue Type`)){
+  if(Jira$`Issue Type`[i] == "Bug" || Jira$`Issue Type`[i] == "Pre-Release Bug"){
+    my_vec <- c(my_vec, i)
+  }
+}
+```
+```{r}
+Jira_bugs <- Jira[c(my_vec), ]
+```
+
+
+```{r}
+for(i in 1:length(Jira_bugs$Status)){
+  Jira_bugs$Resolved[i]<-NA
+}
+for(i in 1:length(Jira_bugs$Status)){
+        if(Jira_bugs$Status[i] == "Resolved"){
+          Jira_bugs$Resolved[i]<-Jira_bugs$Updated[i]
         }
 }
 ```
 ```{r}
-Jira_Sprints <- Jira %>%
+Jira_Sprints <- Jira_bugs %>%
   select(
     Sprint,
     Sprint_1,
@@ -102,30 +124,30 @@ Jira_Sprints <- Jira %>%
 ```
 
 ```{r}
-for(i in 1:length(Jira$Status)){
-  if(is.na(Jira$Sprint_4[i]) == FALSE){
-  Jira$n_sprints[i]<-5
+for(i in 1:length(Jira_bugs$Status)){
+  if(is.na(Jira_bugs$Sprint_4[i]) == FALSE){
+  Jira_bugs$n_sprints[i]<-5
   }
-  else if(is.na(Jira$Sprint_3[i]) == FALSE){
-    Jira$n_sprints[i]<-4
+  else if(is.na(Jira_bugs$Sprint_3[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-4
   }
-  else if(is.na(Jira$Sprint_2[i]) == FALSE){
-    Jira$n_sprints[i]<-3
+  else if(is.na(Jira_bugs$Sprint_2[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-3
   }
-  else if(is.na(Jira$Sprint_1[i]) == FALSE){
-    Jira$n_sprints[i]<-2
+  else if(is.na(Jira_bugs$Sprint_1[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-2
   }
-  else if(is.na(Jira$Sprint[i]) == FALSE){
-    Jira$n_sprints[i]<-1
+  else if(is.na(Jira_bugs$Sprint[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-1
   }
   else{
-    Jira$n_sprints[i] <-0
+    Jira_bugs$n_sprints[i] <-0
   }
 }
 ```
 This code block updates the "Resolved" column. The resolved column only contains a value if the row's value in the Status column is "Resolved". If the logical statement is TRUE then the Resolved column's value is the same as the Updated column.
 ```{r}
-Jira <- Jira %>%
+Jira_bugs <- Jira_bugs %>%
     mutate(
       Priority = recode(
        Priority,
@@ -189,7 +211,7 @@ Jira <- Jira %>%
     )
 ```
 ```{r}
-Jira_reduced <- Jira %>%
+Jira_reduced <- Jira_bugs %>%
   select(
     Priority,
     completed,
@@ -215,10 +237,10 @@ This code block calculates the number of weeks.
 Jira_reduced %>%
   ggplot() +
   geom_histogram(aes(x = date_created, fill = Priority), bins = 20) +
-  labs(title = "Direct Trends Histogram") +
+  labs(title = "Defect Trends Histogram") +
   xlab("Issue Date")
 ```
-This graph shows the Direct Trends as they are shown in the PowerPoint from the Navy. This graph shows the number of different issues reported, with the colors indicating the Priority of the issue. 
+This graph shows the defect Trends as they are shown in the PowerPoint from the Navy. This graph shows the number of different issues reported, with the colors indicating the Priority of the issue. 
 ```{r}
 Summary_Statistics <- Jira_reduced %>%
   group_by(Priority) %>%
@@ -228,23 +250,15 @@ Summary_Statistics <- Jira_reduced %>%
     `MTTR` = (mean((repair_time), na.rm = TRUE)),
     FFA = sum(failed_fix),
     DRE = sum(completed) / n(),
-    open = sum(open)
+    Open = sum(open)
   )
-Summary_Statistics
+(Summary_Statistics)
 ```
 This graph shows some summary statistics, most of which are estimated to a degree. Each parameter is calculated for each priority level.  
 •	Defects- This column shows the total number of defects.  
 •	Defects in four weeks- This column shows the average number of defects over four weeks.  
-•	MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is “Resolved”).  
-•	DRE (direct removal efficiency)- This column shows the number of total issues resolved divided by the number of total issues. 
-```{r}
-Jira_reduced %>%
-  group_by(n_sprints) %>%
-  summarise( 
-    Defects = n(),
-    `Defects in four weeks` = n() / (Number_of_weeks / 4),
-    `MTTR` = (mean((repair_time), na.rm = TRUE)),
-    DRE = sum(completed) / n()
-  )
-```
+•	MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is “Resolved”).
+•	FFA (Failed Fix Attempts)- This column states the number of issues that have to be tested still.  
+•	DRE (defect removal efficiency)- This column shows the number of total issues resolved divided by the number of total issues. 
+•	Open- the number of projects that are left as "open"
 
