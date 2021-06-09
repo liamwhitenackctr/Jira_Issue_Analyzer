@@ -34,6 +34,26 @@ for(i in 1:length(Jira$Status)){
 }
 ```
 ```{r, echo= FALSE}
+n <- 0
+counter <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter] == "Pre-Release Bug"){
+    my_vec <- counter
+    n = 1
+    counter = counter + 1
+  }
+}
+for(i in counter:length(Jira$`Issue Type`)){
+  if(Jira$`Issue Type`[i] == "Bug" || Jira$`Issue Type`[i] == "Pre-Release Bug"){
+    my_vec <- c(my_vec, i)
+  }
+}
+```
+```{r, echo=FALSE}
+Jira_bugs <- Jira[c(my_vec), ]
+```
+```{r, echo= FALSE}
 Jira_Sprints <- Jira %>%
   select(
     Sprint,
@@ -44,29 +64,29 @@ Jira_Sprints <- Jira %>%
   )
 ```
 ```{r, echo= FALSE}
-for(i in 1:length(Jira$Status)){
-  if(is.na(Jira$Sprint_4[i]) == FALSE){
-  Jira$n_sprints[i]<-5
+for(i in 1:length(Jira_bugs$Status)){
+  if(is.na(Jira_bugs$Sprint_4[i]) == FALSE){
+  Jira_bugs$n_sprints[i]<-5
   }
-  else if(is.na(Jira$Sprint_3[i]) == FALSE){
-    Jira$n_sprints[i]<-4
+  else if(is.na(Jira_bugs$Sprint_3[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-4
   }
-  else if(is.na(Jira$Sprint_2[i]) == FALSE){
-    Jira$n_sprints[i]<-3
+  else if(is.na(Jira_bugs$Sprint_2[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-3
   }
-  else if(is.na(Jira$Sprint_1[i]) == FALSE){
-    Jira$n_sprints[i]<-2
+  else if(is.na(Jira_bugs$Sprint_1[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-2
   }
-  else if(is.na(Jira$Sprint[i]) == FALSE){
-    Jira$n_sprints[i]<-1
+  else if(is.na(Jira_bugs$Sprint[i]) == FALSE){
+    Jira_bugs$n_sprints[i]<-1
   }
   else{
-    Jira$n_sprints[i] <-0
+    Jira_bugs$n_sprints[i] <-0
   }
 }
 ```
 ```{r, echo= FALSE}
-Jira <- Jira %>%
+Jira_bugs <- Jira_bugs %>%
     mutate(
       Priority = recode(
        Priority,
@@ -92,6 +112,39 @@ Jira <- Jira %>%
         Reopened = 0,
         .default = 0
       ), # set the value of each resolved issue to 1 for computational purposes
+      completed = recode(
+        Status,
+        Resolved = 1,
+        Done = 0,
+        Closed = 0,
+        `In Progress` = 0,
+        `Ready For Review` = 0,
+        `Ready For Test` = 0,
+        Reopened = 0,
+        .default = 0
+      ), # set the value of each resolved issue to 1 for computational purposes
+      open = recode(
+        Status,
+        Resolved = 0,
+        Done = 1,
+        Closed = 0,
+        `In Progress` = 1,
+        `Ready For Review` = 1,
+        `Ready For Test` = 1,
+        Reopened = 1,
+        .default = 0
+      ), # set the value of each resolved issue to 1 for computational purposes
+      failed_fix = recode(
+        Status,
+        Resolved = 0,
+        Done = 0,
+        Closed = 0,
+        `In Progress` = 0,
+        `Ready For Review` = 0,
+        `Ready For Test` = 0,
+        Reopened = 1,
+        .default = 0
+      ), # set the value of each resolved issue to 1 for computational purposes
       Parent = `Parent id`,
       Issue = `Issue id`,
       Type = `Issue Type`,
@@ -108,10 +161,12 @@ Jira <- Jira %>%
     )
 ```
 ```{r, echo= FALSE}
-Jira_reduced <- Jira %>%
+Jira_reduced <- Jira_bugs %>%
   select(
     Priority,
     completed,
+    open,
+    failed_fix,
     date_created,
     date_updated,
     date_resolved,
@@ -168,5 +223,22 @@ filter_select("Priority", "Priority", Shared_Jira, ~Priority)
 ```
 ```{r, echo=FALSE}
 outliers <- nrow(Jira_reduced) - nrow(no_outliers_Jira_reduced)
+```
+```{r, echo = FALSE}
+Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created))/7
+Number_of_weeks <- as.numeric(Number_of_weeks)
+```
+```{r, echo=FALSE}
+Summary_Statistics <- Jira_reduced %>%
+  group_by(Priority) %>%
+  summarise( 
+    Defects = n(),
+    `Defects in four weeks` = n() / (Number_of_weeks / 4),
+    `MTTR` = (mean((repair_time), na.rm = TRUE)),
+    FFA = sum(failed_fix),
+    DRE = sum(completed) / n(),
+    Open = sum(open)
+  )
+t(Summary_Statistics)
 ```
 
