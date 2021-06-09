@@ -63,7 +63,7 @@ I will be addressing the issue by mining all the data available on Jira and GitH
 •	Change failure rate within release cycle  
 •	Automated Code Coverage (in percent)  
 
-```{r}
+```{r, echo= FALSE}
 GitLab <- GitLab %>%
   mutate(
     author_date = as.Date(strptime(author_date, 
