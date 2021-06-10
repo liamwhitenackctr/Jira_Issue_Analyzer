@@ -48,7 +48,9 @@ p <- Shared_Jira %>%
    ) +
   labs(x = "Date Created", y = "Repair Time")
 ```
-
+```{r, echo=FALSE}
+outliers <- nrow(Jira_reduced) - nrow(no_outliers_Jira_reduced)
+```
 
 Column
 -------------------------------------
@@ -71,8 +73,6 @@ SidebarName {.sidebar}
 ```{r, echo = FALSE}
 filter_select("Priority", "Priority", Shared_Jira, ~Priority)
 ```
-```{r, echo=FALSE}
-outliers <- nrow(Jira_reduced) - nrow(no_outliers_Jira_reduced)
-```
+
 
 
