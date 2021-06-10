@@ -247,7 +247,7 @@ Jira_reduced <- Jira_reduced %>%
 ```
 ```{r, echo=FALSE}
 # make a plot that shows the distribution of issues over the last year
-Jira_reduced_year %>%
+Defect_Trends <- Jira_reduced_year %>%
   ggplot() +
   geom_histogram(aes(x = date_created, fill = Priority), bins = 12) +
   labs(title = "Defect Trends Histogram") +
@@ -264,7 +264,6 @@ Summary_Statistics <- Jira_reduced %>%
     DRE = sum(completed) / n(), # count the number of rows marked as completed
     Open = sum(open) # count the number of rows that aren't closed or resolved
   ) 
-(Summary_Statistics)
 ```
 ```{r, echo=FALSE}
 write_csv(Summary_Statistics, "Summary_Statistics.csv") # write my software quality metrics to their own file
@@ -273,29 +272,36 @@ write_csv(Summary_Statistics, "Summary_Statistics.csv") # write my software qual
 write_csv(Jira_reduced, "Jira_reduced.csv") # save the organized data to a new and improved file
 ```
 
-
 This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attached. 
 
 **All data is collected from the Informedb project. The project has assigned issue resolution data on Jira that was collected and organized to analyze in RStudio.**  
 
-## Question of Interest  
-The issue I will be addressing will be the military’s request for organized and presented data on projects. Software Quality Metrics are useful for analyzing trends and discovering patterns that lead to productivity. This project is being developed because the military would like reports on these metrics but doing some data analysis could show how the company can improve the efficiency of their software development.  
-I will be addressing the issue by mining all the data available on Jira and GitHub for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics:  
+## Problem Statement  
+The issue I will be addressing will be the military’s request for organized and presented data on projects.  
+"Software Quality Metrics are useful for analyzing trends and discovering patterns that lead to productivity."  
+This project is being developed because the military would like reports on these metrics but doing some data analysis could show how the company can improve the efficiency of their software development.  
+I will be addressing the issue by mining all the data available on Jira for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics:  
 •	Defect Trends  
 •	Total Defects found in the last 4 weeks  
 •	MTTR – Mean time to repair  
-•	defect Removal Efficiency  
+•	Defect Removal Efficiency  
 •	Number of failed fix attempts (external)  
 •	Number of failed fix attempts (internal)  
 •	Change failure rate within release cycle  
 •	Automated Code Coverage (in percent)  
 
 
-This chart shows some summary statistics, most of which are estimated to a degree. Each parameter is calculated for each priority level.  
+## Software Quality Metrics
+```{r echo=FALSE}
+Defect_Trends
+```
+```{r echo=FALSE}
+Summary_Statistics
+```
 •	Defects in four weeks- This column shows the number of defects over the last four weeks of issues being reported.  
 •	MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is “Resolved”).
 •	FFA (Failed Fix Attempts)- This column states the number of issues that have to be tested still.  
 •	DRE (defect removal efficiency)- This column shows the number of total issues resolved divided by the number of total issues. 
-•	Open the number of projects that are left as "open"
+•	Open- the number of projects that are left as "open"
 
 
