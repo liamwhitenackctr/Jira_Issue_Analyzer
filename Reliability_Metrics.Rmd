@@ -54,7 +54,7 @@ Jira <- read_csv("Informedb Jira Data.csv")
 ## Question of Interest  
 The issue I will be addressing will be the military’s request for organized and presented data on projects. Software Quality Metrics are useful for analyzing trends and discovering patterns that lead to productivity. This project is being developed because the military would like reports on these metrics but doing some data analysis could show how the company can improve the efficiency of their software development.  
 I will be addressing the issue by mining all the data available on Jira and GitHub for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics:  
-•	defect Trends  
+•	Defect Trends  
 •	Total Defects found in the last 4 weeks  
 •	MTTR – Mean time to repair  
 •	defect Removal Efficiency  
@@ -80,7 +80,7 @@ GitLab_reduced <- GitLab %>%
   )
 ```
 This code block takes all of the data from GitLab and makes it usable. It then outputs it all into a much simpler dataset which only contains the columns being used. 
-```{r}
+```{r, echo=FALSE}
 n <- 0
 counter <- 0
 while(n < 1){
@@ -97,12 +97,12 @@ for(i in counter:length(Jira$`Issue Type`)){
   }
 }
 ```
-```{r}
+```{r, echo=FALSE}
 Jira_bugs <- Jira[c(my_vec), ]
 ```
 
 
-```{r}
+```{r, echo=FALSE}
 for(i in 1:length(Jira_bugs$Status)){
   Jira_bugs$Resolved[i]<-NA
 }
@@ -112,88 +112,57 @@ for(i in 1:length(Jira_bugs$Status)){
         }
 }
 ```
-```{r}
-Jira_Sprints <- Jira_bugs %>%
-  select(
-    Sprint,
-    Sprint_1,
-    Sprint_2,
-    Sprint_3,
-    Sprint_4
-  )
-```
 
-```{r}
-for(i in 1:length(Jira_bugs$Status)){
-  if(is.na(Jira_bugs$Sprint_4[i]) == FALSE){
-  Jira_bugs$n_sprints[i]<-5
-  }
-  else if(is.na(Jira_bugs$Sprint_3[i]) == FALSE){
-    Jira_bugs$n_sprints[i]<-4
-  }
-  else if(is.na(Jira_bugs$Sprint_2[i]) == FALSE){
-    Jira_bugs$n_sprints[i]<-3
-  }
-  else if(is.na(Jira_bugs$Sprint_1[i]) == FALSE){
-    Jira_bugs$n_sprints[i]<-2
-  }
-  else if(is.na(Jira_bugs$Sprint[i]) == FALSE){
-    Jira_bugs$n_sprints[i]<-1
-  }
-  else{
-    Jira_bugs$n_sprints[i] <-0
-  }
-}
-```
 This code block updates the "Resolved" column. The resolved column only contains a value if the row's value in the Status column is "Resolved". If the logical statement is TRUE then the Resolved column's value is the same as the Updated column.
-```{r}
+```{r, echo=FALSE}
 Jira_bugs <- Jira_bugs %>%
     mutate(
       Priority = recode(
        Priority,
-          `1 - Trivial` = "R1",
-          `Trivial` = "R1",
-          `2 - Minor` = "R1",
-          `Minor` = "R1",
-          `3 - Major` = "R2",
-          `Major` = "R2",
-          `4 - Critical` = "R3",
-          `Critical` = "R3",
-          `5 - Blocker` = "R4",
-          `Blocker` = "R4",
+          `1 - Trivial` = "R4",
+          `Trivial` = "R4",
+          `2 - Minor` = "R4",
+          `Minor` = "R4",
+          `3 - Major` = "R3",
+          `Major` = "R3",
+          `4 - Critical` = "R2",
+          `Critical` = "R2",
+          `5 - Blocker` = "R1",
+          `Blocker` = "R1",
       ), # Rename each value to R1, R2, R3, and R4, the military's preferred terms.
       completed = recode(
         Status,
-        Resolved = 1,
-        Done = 0,
-        Closed = 0,
-        `In Progress` = 0,
-        `Ready For Review` = 0,
-        `Ready For Test` = 0,
-        Reopened = 0,
-        .default = 0
+        Resolved = TRUE,
+        Done = FALSE,
+        Closed = FALSE,
+        `In Progress` = FALSE,
+        `Ready For Review` = FALSE,
+        `Ready For Test` = FALSE,
+        Reopened = FALSE,
+        .default = FALSE
       ), # set the value of each resolved issue to 1 for computational purposes
       open = recode(
         Status,
-        Resolved = 0,
-        Done = 1,
-        Closed = 0,
-        `In Progress` = 1,
-        `Ready For Review` = 1,
-        `Ready For Test` = 1,
-        Reopened = 1,
-        .default = 0
+        Resolved = FALSE,
+        Done = TRUE,
+        Closed = FALSE,
+        `In Progress` = TRUE,
+        `Ready For Review` = TRUE,
+        `Ready For Test` = TRUE,
+        Reopened = TRUE,
+        Todo = TRUE,
+        .default = TRUE
       ), # set the value of each resolved issue to 1 for computational purposes
       failed_fix = recode(
         Status,
-        Resolved = 0,
-        Done = 0,
-        Closed = 0,
-        `In Progress` = 0,
-        `Ready For Review` = 0,
-        `Ready For Test` = 0,
-        Reopened = 1,
-        .default = 0
+        Resolved = FALSE,
+        Done = FALSE,
+        Closed = TRUE,
+        `In Progress` = FALSE,
+        `Ready For Review` = FALSE,
+        `Ready For Test` = FALSE,
+        Reopened = FALSE,
+        .default = FALSE
       ), # set the value of each resolved issue to 1 for computational purposes
       Parent = `Parent id`,
       Issue = `Issue id`,
@@ -210,55 +179,121 @@ Jira_bugs <- Jira_bugs %>%
       # the difference between the date of creation and day resolved
     )
 ```
-```{r}
+```{r, echo=FALSE}
+# Select only the rows I need
 Jira_reduced <- Jira_bugs %>%
   select(
-    Priority,
-    completed,
+    Priority, # The importance of fixing each bug R1 is the highest importance, R4 is the lowest
+    Status, # the status of each progress i.e ""In progress", "todo", or "resolved"
+    date_created, # The day each issue was first created
+    date_updated, # The last time the issue was edited
+    date_resolved, # The last time the issue was edited IF the status is "resolved"
+    time_spent, # date updated - date created
+    repair_time, # date updated - date created IF the status is "resolved"
+    completed, # 1 if completed, 0 if not
     open,
     failed_fix,
-    date_created,
-    date_updated,
-    date_resolved,
-    time_spent,
-    repair_time,
     Assignee,
-    n_sprints
   )
 ```
-This code block renames columns and makes them usable. At the end, it makes a new dataset with only the necessary columns. 
+```{r, echo=FALSE}
+# This code block will test to see if the date_created was in the last 365 days and create an array that contains all of the row numbers we want
 
-```{r}
-Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created))/7
-Number_of_weeks <- as.numeric(Number_of_weeks)
+# Initialize the array and set the first value 
+    # Note: there is probably a much more efficient way of initializing an array. I do not know what the         method is, and this will have to do.
+n <- 0
+counter <- 0
+while(n < 1){ # this while statement will set the first value of the array
+  counter <- counter + 1
+  if(Jira_reduced$date_created[counter] > (max(Jira_reduced$date_created)-365)){
+    index_365 <- counter
+    n = 1
+    counter = counter + 1
+  }
+}
+# if the date created is greater than the last day anything was created - 365, record that row number in an array
+for(i in counter:length(Jira_reduced$date_created)){ 
+  if(Jira_reduced$date_created[i] > (max(Jira_reduced$date_created)-365)){
+    index_365 <- c(index_365, i)
+  }
+}
 ```
-This code block calculates the number of weeks.
-```{r}
-Jira_reduced %>%
+```{r, echo=FALSE}
+# This code block will do the same thing as before, but uses the last 28 days instead of 365. Because this is being used for summary statistics and not a graph, this block will record a "1" or "0" for each row to be later added onto the tibble
+n <- 0
+counter <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(Jira_reduced$date_created[counter] > (max(Jira_reduced$date_created)-28)){
+    index_28 <- TRUE
+    n = 1
+    counter = counter + 1
+  }
+  else{
+    index_28 <- FALSE
+    n = 1
+    counter = counter + 1
+  }
+}
+for(i in counter:length(Jira_reduced$date_created)){
+  if(Jira_reduced$date_created[i] > (max(Jira_reduced$date_created)-28)){
+    index_28 <- c(index_28, TRUE)
+  }
+  else{
+    index_28 <- c(index_28, FALSE)
+  }
+}
+```
+```{r, echo=FALSE}
+# make a new tibble with only the rows selected from the earlier code block. The array contains the row number of every issue listed over the last week
+Jira_reduced_year <- Jira_reduced[c(index_365), ]
+```
+```{r, echo=FALSE}
+# add a new row to Jira_reduced that has a value of 1 if the issue was created in the last 28 days, 0 if the issue was created before
+Jira_reduced <- Jira_reduced %>%
+  mutate(
+    last28 = index_28
+  )
+```
+```{r, echo=FALSE}
+# calculate the number of weeks
+Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created)) / 7 #last day minus first day divided by 7
+Number_of_weeks <- as.numeric(Number_of_weeks) # change to a rational number instead of a function of time
+```
+```{r, echo=FALSE}
+# make a plot that shows the distribution of issues over the last year
+Jira_reduced_year %>%
   ggplot() +
-  geom_histogram(aes(x = date_created, fill = Priority), bins = 20) +
+  geom_histogram(aes(x = date_created, fill = Priority), bins = 12) +
   labs(title = "Defect Trends Histogram") +
   xlab("Issue Date")
 ```
 This graph shows the defect Trends as they are shown in the PowerPoint from the Navy. This graph shows the number of different issues reported, with the colors indicating the Priority of the issue. 
-```{r}
+```{r, echo=FALSE}
+# Calculate the summary statistics by their Priority
 Summary_Statistics <- Jira_reduced %>%
   group_by(Priority) %>%
   summarise( 
-    Defects = n(),
-    `Defects in four weeks` = n() / (Number_of_weeks / 4),
-    `MTTR` = (mean((repair_time), na.rm = TRUE)),
-    FFA = sum(failed_fix),
-    DRE = sum(completed) / n(),
-    Open = sum(open)
-  )
+    `Defects in the last four weeks` = sum(last28), # count the number of rows that were created in the last 28 days
+    MTTR = (mean((repair_time), na.rm = TRUE)), # Repair time average
+    FFA = sum(failed_fix), # the number of "closed" issues i.e. issues that were opened and then closed because they couldn't be fixed
+    DRE = sum(completed) / n(), # count the number of rows marked as completed
+    Open = sum(open) # count the number of rows that aren't closed or resolved
+  ) 
 (Summary_Statistics)
+```
+```{r, echo=FALSE}
+write_csv(Summary_Statistics, "Summary_Statistics.csv") # write my software quality metrics to their own file
+```
+```{r, echo=FALSE}
+write_csv(Jira_reduced, "Jira_reduced.csv") # save the organized data to a new and improved file
 ```
 This graph shows some summary statistics, most of which are estimated to a degree. Each parameter is calculated for each priority level.  
 •	Defects- This column shows the total number of defects.  
-•	Defects in four weeks- This column shows the average number of defects over four weeks.  
+•	Defects in four weeks- This column shows the number of defects over the last four weeks of issues being reported.  
 •	MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is “Resolved”).
 •	FFA (Failed Fix Attempts)- This column states the number of issues that have to be tested still.  
 •	DRE (defect removal efficiency)- This column shows the number of total issues resolved divided by the number of total issues. 
 •	Open- the number of projects that are left as "open"
+
 
