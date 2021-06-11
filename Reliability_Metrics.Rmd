@@ -45,7 +45,7 @@ suppressPackageStartupMessages(library(plotly))
 GitLab <- read_csv("Informedb Gitlab Data.csv")
 Jira <- read_csv("Informedb Jira Data.csv")
 ```
-```{r eval=FALSE, include=FALSE}
+```{r GitLab, eval=FALSE, include=FALSE}
 # this code block makes the GitLab data accessible. Unfortunately, this data is no longer helpful for my project, so it is not included. 
 
 GitLab <- GitLab %>%
@@ -63,12 +63,12 @@ GitLab_reduced <- GitLab %>%
     committer_date
   )
 ```
-```{r eval=FALSE, include=FALSE}
+```{r Number_of_weeks, eval=FALSE, include=FALSE}
 # calculate the number of weeks
 Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created)) / 7 #last day minus first day divided by 7
 Number_of_weeks <- as.numeric(Number_of_weeks) # change to a rational number instead of a function of time
 ```
-```{r, echo=FALSE}
+```{r bug_index, echo=FALSE}
 # record the row number of each row
 
 #this while loop initializes the array and sets its first value
@@ -89,11 +89,11 @@ for(i in counter:length(Jira$`Issue Type`)){
   }
 }
 ```
-```{r, echo=FALSE}
+```{r Jira_bugs, echo=FALSE}
 # make a new tibble with only the rows recorded in bug_index
 Jira_bugs <- Jira[c(bug_index), ]
 ```
-```{r, echo=FALSE}
+```{r resolved_date, echo=FALSE}
 # This code block updates the "Resolved" column. The resolved column only contains a value if the row's value in the Status column is "Resolved". If the logical statement is TRUE then the Resolved column's value is the same as the Updated column.
 for(i in 1:length(Jira_bugs$Status)){
   Jira_bugs$Resolved[i]<-NA
@@ -104,7 +104,7 @@ for(i in 1:length(Jira_bugs$Status)){
         }
 }
 ```
-```{r, echo=FALSE}
+```{r mutate_Jira, echo=FALSE}
 Jira_bugs <- Jira_bugs %>%
     mutate(
       Priority = recode(
@@ -169,7 +169,7 @@ Jira_bugs <- Jira_bugs %>%
       # the difference between the date of creation and day resolved
     )
 ```
-```{r, echo=FALSE}
+```{r Jira_reduced, echo=FALSE}
 # Select only the rows I need
 Jira_reduced <- Jira_bugs %>%
   select(
@@ -186,7 +186,7 @@ Jira_reduced <- Jira_bugs %>%
     failed_fix, # TRUE if "closed", FALSE if not
   )
 ```
-```{r, echo=FALSE}
+```{r index_365, echo=FALSE}
 # This code block will test to see if the date_created was in the last 365 days and create an array that contains all of the row numbers we want
 
 # Initialize the array and set the first value 
@@ -208,7 +208,7 @@ for(i in counter:length(Jira_reduced$date_created)){
   }
 }
 ```
-```{r, echo=FALSE}
+```{r index_28, echo=FALSE}
 # This code block will do the same thing as before, but uses the last 28 days instead of 365. Because this is being used for summary statistics and not a graph, this block will record a "TRUE" or "FALSE" for each row to be later added onto the tibble
 n <- 0
 counter <- 0
@@ -234,18 +234,18 @@ for(i in counter:length(Jira_reduced$date_created)){
   }
 }
 ```
-```{r, echo=FALSE}
+```{r Jira_reduced_year, echo=FALSE}
 # make a new tibble with only the rows selected from the earlier code block. The array contains the row number of every issue listed over the last week
 Jira_reduced_year <- Jira_reduced[c(index_365), ]
 ```
-```{r, echo=FALSE}
+```{r last28, echo=FALSE}
 # add a new row to Jira_reduced that has a value of TRUE if the issue was created in the last 28 days, FALSE if the issue was created before
 Jira_reduced <- Jira_reduced %>%
   mutate(
     last28 = index_28
   )
 ```
-```{r, echo=FALSE}
+```{r Defect_Trends, echo=FALSE}
 # make a plot that shows the distribution of issues over the last year
 Defect_Trends <- Jira_reduced_year %>%
   ggplot() +
@@ -253,7 +253,7 @@ Defect_Trends <- Jira_reduced_year %>%
   labs(title = "Defect Trends Histogram") +
   xlab("Issue Date")
 ```
-```{r, echo=FALSE}
+```{r Summary_Statistics, echo=FALSE}
 # Calculate the summary statistics by their Priority
 Summary_Statistics <- Jira_reduced %>%
   group_by(Priority) %>%
@@ -265,10 +265,10 @@ Summary_Statistics <- Jira_reduced %>%
     Open = sum(open) # count the number of rows that aren't closed or resolved
   ) 
 ```
-```{r, echo=FALSE}
+```{r Summary_Statistics.csv, echo=FALSE}
 write_csv(Summary_Statistics, "Summary_Statistics.csv") # write my software quality metrics to their own file
 ```
-```{r, echo=FALSE}
+```{r Jira_reduced.csv, echo=FALSE}
 write_csv(Jira_reduced, "Jira_reduced.csv") # save the organized data to a new and improved file
 ```
 
