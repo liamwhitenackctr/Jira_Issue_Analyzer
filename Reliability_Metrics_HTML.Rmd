@@ -23,24 +23,24 @@ library(plotly)
 library(crosstalk)
 Jira_reduced <- read_csv("Jira_reduced.csv")
 ```
-```{r, echo= FALSE}
+```{r IQR, echo= FALSE}
 Q1 <- quantile(Jira_reduced$time_spent, .25)
 Q3 <- quantile(Jira_reduced$time_spent, .75)
 IQR <- IQR(Jira_reduced$time_spent)
 no_outliers_Jira_reduced <- subset(Jira_reduced, Jira_reduced$time_spent> 
                                      (Q1 - 1.5*IQR) & Jira_reduced$time_spent< (Q3 + 1.5*IQR))
 ```
-```{r, echo= FALSE}
+```{r no_outliers, echo= FALSE}
 Shared_Jira <- SharedData$new(no_outliers_Jira_reduced)
 ```
-```{r, echo= FALSE}
+```{r boxplot_b, echo= FALSE}
 b <- Shared_Jira %>%
   ggplot() +
   geom_boxplot(aes(x = reorder(Priority, repair_time, FUN=median), y = repair_time, fill = Priority)) +
-  labs(x = "Priority Level", y = "Repair Time") + 
+  labs(x = "Priority", y = "Repair Time") + 
   theme(axis.text.x = element_text(angle = 90))
 ```
-```{r, echo= FALSE}
+```{r scatterplot_p, echo= FALSE}
 p <- Shared_Jira %>%
   ggplot() +
    geom_point(
@@ -48,7 +48,7 @@ p <- Shared_Jira %>%
    ) +
   labs(x = "Date Created", y = "Repair Time")
 ```
-```{r, echo=FALSE}
+```{r num_outliers, echo=FALSE}
 outliers <- nrow(Jira_reduced) - nrow(no_outliers_Jira_reduced)
 ```
 
