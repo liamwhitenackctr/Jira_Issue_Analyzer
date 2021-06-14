@@ -23,17 +23,18 @@ output:
     smart: true
     dev: svg
 ---
+# Setup
 ```{r setup, include = FALSE}
 # Set knitr options
 knitr::opts_chunk$set(
-  echo = TRUE,
-  eval = TRUE,
-  fig.width = 5,
-  fig.asp = 0.618,
-  out.width = "70%",
-  dpi = 120,
-  fig.align = "center",
-  cache = FALSE
+	eval = TRUE,
+	echo = TRUE,
+	fig.align = "center",
+	fig.asp = 0.618,
+	fig.width = 5,
+	cache = FALSE,
+	dpi = 120,
+	out.width = "70%"
 )
 # Load required packages
 suppressPackageStartupMessages(library(tidyverse))
@@ -42,9 +43,10 @@ suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 suppressPackageStartupMessages(library(rlang))
 suppressPackageStartupMessages(library(plotly))
-GitLab <- read_csv("Informedb Gitlab Data.csv")
+#GitLab <- read_csv("Informedb Gitlab Data.csv")
 Jira <- read_csv("Informedb Jira Data.csv")
 ```
+# Tidy Data
 ```{r GitLab, eval=FALSE, include=FALSE}
 # this code block makes the GitLab data accessible. Unfortunately, this data is no longer helpful for my project, so it is not included. 
 
@@ -68,7 +70,7 @@ GitLab_reduced <- GitLab %>%
 Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created)) / 7 #last day minus first day divided by 7
 Number_of_weeks <- as.numeric(Number_of_weeks) # change to a rational number instead of a function of time
 ```
-```{r bug_index, echo=FALSE}
+```{r bug_index}
 # record the row number of each row
 
 #this while loop initializes the array and sets its first value
@@ -76,25 +78,31 @@ n <- 0
 counter <- 0
 while(n < 1){
   counter <- counter + 1
-  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter] == "Pre-Release Bug"){
+  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter]
+     == "Pre-Release Bug"){
     bug_index <- counter
     n = 1
     counter = counter + 1
   }
 }
-# this for loop checks to see if the issues have the Issue Type "Bug". If they do, mark their row number for later
+# this for loop checks to see if the issues have the Issue Type "Bug".
+# If they do, mark their row number for later
 for(i in counter:length(Jira$`Issue Type`)){
   if(Jira$`Issue Type`[i] == "Bug" || Jira$`Issue Type`[i] == "Pre-Release Bug"){
     bug_index <- c(bug_index, i)
   }
 }
 ```
-```{r Jira_bugs, echo=FALSE}
+```{r Jira_bugs}
 # make a new tibble with only the rows recorded in bug_index
 Jira_bugs <- Jira[c(bug_index), ]
 ```
-```{r resolved_date, echo=FALSE}
-# This code block updates the "Resolved" column. The resolved column only contains a value if the row's value in the Status column is "Resolved". If the logical statement is TRUE then the Resolved column's value is the same as the Updated column.
+```{r resolved_date}
+# This code block updates the "Resolved" column.
+# The resolved column only contains a value if the row's value in the Status
+# column is "Resolved". 
+# If the logical statement is TRUE then the Resolved column's value is the same
+# as the Updated column.
 for(i in 1:length(Jira_bugs$Status)){
   Jira_bugs$Resolved[i]<-NA
 }
@@ -104,7 +112,7 @@ for(i in 1:length(Jira_bugs$Status)){
         }
 }
 ```
-```{r mutate_Jira, echo=FALSE}
+```{r mutate_Jira}
 Jira_bugs <- Jira_bugs %>%
     mutate(
       Priority = recode(
@@ -119,7 +127,9 @@ Jira_bugs <- Jira_bugs %>%
           `Critical` = "R2",
           `5 - Blocker` = "R1",
           `Blocker` = "R1",
-      ), # Rename each value to R1, R2, R3, and R4, the military's preferred terms.
+      ), 
+      # Rename each value to R1, R2, R3, and R4, 
+      # the military's preferred terms.
       completed = recode(
         Status,
         Resolved = TRUE,
@@ -169,16 +179,22 @@ Jira_bugs <- Jira_bugs %>%
       # the difference between the date of creation and day resolved
     )
 ```
-```{r Jira_reduced, echo=FALSE}
+```{r Jira_reduced}
 # Select only the rows I need
 Jira_reduced <- Jira_bugs %>%
   select(
-    Priority, # The importance of fixing each bug R1 is the highest importance, R4 is the lowest
-    Status, # the status of each progress i.e ""In progress", "todo", or "resolved"
-    Assignee, # The person assigned to the issue. Most issues do not typically have an assignee
+    Priority, # The importance of fixing each bug R1 is the highest importance,
+    # R4 is the lowest
+    Status, # the status of each progress i.e ""In progress",
+    # "todo", or "resolved"
+    Assignee, # The person assigned to the issue.
+    # Most issues do not typically have an assignee
+    Reporter, #Typically the same as the creator  
+    Creator, # The person creaing the issue
     date_created, # The day each issue was first created
     date_updated, # The last time the issue was edited
-    date_resolved, # The last time the issue was edited IF the status is "resolved"
+    date_resolved, # The last time the issue was edited
+    # IF the status is "resolved"
     time_spent, # date updated - date created
     repair_time, # date updated - date created IF the status is "resolved"
     completed, # TRUE if completed, FALSE if not
@@ -186,11 +202,14 @@ Jira_reduced <- Jira_bugs %>%
     failed_fix, # TRUE if "closed", FALSE if not
   )
 ```
-```{r index_365, echo=FALSE}
-# This code block will test to see if the date_created was in the last 365 days and create an array that contains all of the row numbers we want
+```{r index_365}
+# This code block will test to see if the date_created was in the last 365 days
+# and create an array that contains all
+# of the row numbers we want
 
 # Initialize the array and set the first value 
-    # Note: there is probably a much more efficient way of initializing an array. I do not know what the         method is, and this will have to do.
+    # Note: there is probably a much more efficient way of initializing an array.
+    # I do not know what the method is, so this will have to do.
 n <- 0
 counter <- 0
 while(n < 1){ # this while statement will set the first value of the array
@@ -201,15 +220,20 @@ while(n < 1){ # this while statement will set the first value of the array
     counter = counter + 1
   }
 }
-# if the date created is greater than the last day anything was created - 365, record that row number in an array
+# if the date created is greater than the last day anything was created - 365,
+# record that row number in an array
 for(i in counter:length(Jira_reduced$date_created)){ 
   if(Jira_reduced$date_created[i] > (max(Jira_reduced$date_created)-365)){
     index_365 <- c(index_365, i)
   }
 }
 ```
-```{r index_28, echo=FALSE}
-# This code block will do the same thing as before, but uses the last 28 days instead of 365. Because this is being used for summary statistics and not a graph, this block will record a "TRUE" or "FALSE" for each row to be later added onto the tibble
+```{r index_28}
+# This code block will do the same thing as before,
+# but uses the last 28 days instead of 365.
+# Because this is being used for summary statistics and not a graph,
+# this block will record a "TRUE" or "FALSE" for each row
+# to be later added onto the tibble
 n <- 0
 counter <- 0
 while(n < 1){
@@ -234,18 +258,22 @@ for(i in counter:length(Jira_reduced$date_created)){
   }
 }
 ```
-```{r Jira_reduced_year, echo=FALSE}
-# make a new tibble with only the rows selected from the earlier code block. The array contains the row number of every issue listed over the last week
+```{r Jira_reduced_year}
+# make a new tibble with only the rows selected from the earlier code block.
+# The array contains the row number of every issue listed over the last week
 Jira_reduced_year <- Jira_reduced[c(index_365), ]
 ```
-```{r last28, echo=FALSE}
-# add a new row to Jira_reduced that has a value of TRUE if the issue was created in the last 28 days, FALSE if the issue was created before
+```{r last28}
+# add a new row to Jira_reduced that has a value of TRUE
+# if the issue was created in the last 28 days,
+# FALSE if the issue was created before
 Jira_reduced <- Jira_reduced %>%
   mutate(
     last28 = index_28
   )
 ```
-```{r Defect_Trends, echo=FALSE}
+## Summary Statistics
+```{r Defect_Trends}
 # make a plot that shows the distribution of issues over the last year
 Defect_Trends <- Jira_reduced_year %>%
   ggplot() +
@@ -253,55 +281,36 @@ Defect_Trends <- Jira_reduced_year %>%
   labs(title = "Defect Trends Histogram") +
   xlab("Issue Date")
 ```
-```{r Summary_Statistics, echo=FALSE}
+```{r Summary_Statistics}
 # Calculate the summary statistics by their Priority
 Summary_Statistics <- Jira_reduced %>%
   group_by(Priority) %>%
   summarise( 
-    `Defects in the last four weeks` = sum(last28), # count the number of rows that were created in the last 28 days
-    MTTR = (mean((repair_time), na.rm = TRUE)), # Repair time average
-    FFA = sum(failed_fix), # the number of "closed" issues i.e. issues that were opened and then closed because they couldn't be fixed
-    DRE = sum(completed) / n(), # count the number of rows marked as completed
-    Open = sum(open) # count the number of rows that aren't closed or resolved
+    `Defects in the last four weeks` = sum(last28), 
+    # count the number of rows that were created in the last 28 days
+    MTTR = (mean((repair_time), na.rm = TRUE)), 
+    # Repair time average
+    FFA = sum(failed_fix), 
+    # the number of "closed" issues i.e. issues that were opened 
+    # and then closed because they couldn't be fixed
+    DRE = sum(completed) / n(), 
+    # count the number of rows marked as completed
+    Open = sum(open) 
+    # count the number of rows that aren't closed or resolved
   ) 
 ```
-```{r Summary_Statistics.csv, echo=FALSE}
-write_csv(Summary_Statistics, "Summary_Statistics.csv") # write my software quality metrics to their own file
+## Output
+```{r Summary_Statistics.csv}
+write_csv(Summary_Statistics, "Summary_Statistics.csv") 
+# write my software quality metrics to their own file
 ```
-```{r Jira_reduced.csv, echo=FALSE}
-write_csv(Jira_reduced, "Jira_reduced.csv") # save the organized data to a new and improved file
+```{r Jira_reduced.csv}
+write_csv(Jira_reduced, "Jira_reduced.csv") 
+# save the organized data to a new and improved file
 ```
-
-This project was done as an Internship Report to be presented at the end of the year. It is made in an attempt to find the eight Software Quality Metrics found in the PowerPoint attached. 
-
-**All data is collected from the Informedb project. The project has assigned issue resolution data on Jira that was collected and organized to analyze in RStudio.**  
-
-## Problem Statement  
-The issue I will be addressing will be the military’s request for organized and presented data on projects.  
-"Software Quality Metrics are useful for analyzing trends and discovering patterns that lead to productivity."  
-This project is being developed because the military would like reports on these metrics but doing some data analysis could show how the company can improve the efficiency of their software development.  
-I will be addressing the issue by mining all the data available on Jira for the Informedb Project on the company’s progress in finding issues, starting work on said issues, and resolving the issues. The project will require me to find eight different Software Quality Metrics:  
-•	Defect Trends  
-•	Total Defects found in the last 4 weeks  
-•	MTTR – Mean time to repair  
-•	Defect Removal Efficiency  
-•	Number of failed fix attempts (external)  
-•	Number of failed fix attempts (internal)  
-•	Change failure rate within release cycle  
-•	Automated Code Coverage (in percent)  
-
-
-## Software Quality Metrics
-```{r echo=FALSE}
+```{r}
 Defect_Trends
 ```
-```{r echo=FALSE}
+```{r}
 Summary_Statistics
 ```
-•	Defects in four weeks- This column shows the number of defects over the last four weeks of issues being reported.  
-•	MTTR (mean time to repair)- This column shows the average number of days spent from the creation of the project to the day it was last updated (only in cases where the status of the project is “Resolved”).
-•	FFA (Failed Fix Attempts)- This column states the number of issues that have to be tested still.  
-•	DRE (defect removal efficiency)- This column shows the number of total issues resolved divided by the number of total issues. 
-•	Open- the number of projects that are left as "open"
-
-
