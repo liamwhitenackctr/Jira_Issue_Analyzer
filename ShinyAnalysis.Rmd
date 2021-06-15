@@ -26,16 +26,28 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
 ## Inputs and Outputs
-```{r standard_code_chunk}
+```{r standard_code_chunk, echo=FALSE}
 ui <- fluidPage(
-  sliderInput(inputId = "start_date_resolved", label = "Choose a start date", value = (1451624400), min = (1388552400), max = (1577854800)),
+  selectInput(
+    inputId = "action",
+    label = "Parameters",
+    choices = Jira_reduced$date_created, Jira_reduced$date_updated, Jira_reduced$date_resolved
+  ),
+  sliderInput(
+    inputId = "start_date", 
+              label = "Choose a start date", 
+              value = as.Date("2019/1/1"), 
+              min = as.Date("2014/1/1"), 
+              max = as.Date("2020/1/1")
+              ),
+  sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
   plotOutput("histogram")
 )
 
 server <- function(input, output) {
   output$histogram <- renderPlot({
-    title <- "Resolved Issues"
-    hist(as.numeric(Jira_reduced$date_resolved), main = title)
+    title <- "Resolved Bugs"
+    hist(Jira_reduced$date_resolved, main = title, breaks = input$bins, xlim = c(input$start_date, max(Jira_reduced$date_updated)))
   })
 }
 
