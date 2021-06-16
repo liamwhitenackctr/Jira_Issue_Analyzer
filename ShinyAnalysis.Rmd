@@ -18,6 +18,7 @@ suppressPackageStartupMessages(library(shinythemes))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(readr))
 library(datasets)
+library(anytime)
 Jira <- read_csv("Informedb Jira Data.csv")
 Jira_reduced <- read_csv("Jira_reduced.csv")
 ```
@@ -26,6 +27,16 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
+```{r}
+hist(
+      as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,"date_created"]))))*24*60*60, origin="1970-01-01")),
+      main = title, 
+      breaks = input$bins,
+      density=NULL,
+      xlim = c(as.Date(input$start_date_resolved),
+max(Jira_reduced$date_created))
+    )
+```
 
 
 ## Inputs and Outputs
@@ -34,30 +45,37 @@ ui <- fluidPage(
   selectInput(
     inputId = "action",
     label = "Parameters",
-    choices=colnames(Jira_reduced),
+    choices=colnames(Jira_reduced)[6:8],
     selected = "date_created"
   ),
+  
   sliderInput(
     inputId = "start_date_resolved", 
-              label = "Choose a start date", 
-              value = as.Date("2019/1/1"), 
-              min = as.Date("2014/1/1"), 
-              max = as.Date("2020/1/1")
-              ),
+    label = "Choose a start date", 
+    value = as.Date("2019/1/1"), 
+    min = as.Date(min(Jira_reduced$date_created)), 
+    max = as.Date(max(Jira_reduced$date_created))
+  ),
+  
   sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
   plotOutput("histogram")
+  
 )
+
+
 server <- function(input, output) {
   output$histogram <- renderPlot({
-    title <- "Resolved Bugs"
-    hist(
-      array(c(data.matrix(Jira_reduced[,input$action]))),
-      main = input$action, 
-      breaks = input$bins,
-      density=NULL,
-      xlim = c(as.Date(input$start_date_resolved),
-max(Jira_reduced$date_created))
-    )
+    ggplot()+
+      geom_histogram(
+      aes(
+          x = as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,"date_created"]))))*24*60*60, origin="1970-01-01")),
+          fill = Jira_reduced$Priority
+      ), bins = input$bins
+  )+
+  xlim(as.Date(input$start_date_resolved),
+max(Jira_reduced$date_created)) +
+  xlab("Date")+
+  ylab("Count")
   })
 }
 
