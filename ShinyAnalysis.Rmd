@@ -30,41 +30,47 @@ To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authorin
 
 ## Inputs and Outputs
 ```{r standard_code_chunk, echo=FALSE}
+# create side panels
 ui <- fluidPage(
-  selectInput(
-    inputId = "action",
-    label = "Parameters",
-    choices=colnames(Jira_reduced)[6:8],
-    selected = "date_created"
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        inputId = "action",
+        label = "Parameters",
+        choices=("Created" = "date_created", "Updated" = "date_updated", "Resolved" = "date_resolved"),
+        selected = "date_created"
+      ),
+      
+      sliderInput(
+        inputId = "start_date_resolved", 
+        label = "Choose a start date", 
+        value = as.Date(max(Jira_reduced$date_created)-365), 
+        min = as.Date(min(Jira_reduced$date_created)), 
+        max = as.Date(max(Jira_reduced$date_created)-182)
+      ),
+      
+      sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
   ),
-  
-  sliderInput(
-    inputId = "start_date_resolved", 
-    label = "Choose a start date", 
-    value = as.Date("2019/1/1"), 
-    min = as.Date(min(Jira_reduced$date_created)), 
-    max = as.Date(max(Jira_reduced$date_created))
-  ),
-  
-  sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
-  plotOutput("histogram")
-  
+  mainPanel(
+    plotOutput("histogram")
+  )
+  )
 )
-
 
 server <- function(input, output) {
   output$histogram <- renderPlot({
     ggplot()+
       geom_histogram(
       aes(
-          x = as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,"date_created"]))))*24*60*60, origin="1970-01-01")),
+          x = as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")),
           fill = Jira_reduced$Priority
       ), bins = input$bins
   )+
   xlim(as.Date(input$start_date_resolved),
-max(Jira_reduced$date_created)) +
-  xlab("Date")+
-  ylab("Count")
+max(as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")))) +
+  xlab(input$action)+
+  ylab("Count") +
+  labs(fill = "Priority")
   })
 }
 
