@@ -17,6 +17,7 @@ suppressPackageStartupMessages(library(shiny))
 suppressPackageStartupMessages(library(shinythemes))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(readr))
+library(datasets)
 Jira <- read_csv("Informedb Jira Data.csv")
 Jira_reduced <- read_csv("Jira_reduced.csv")
 ```
@@ -25,16 +26,19 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
+
+
 ## Inputs and Outputs
 ```{r standard_code_chunk, echo=FALSE}
 ui <- fluidPage(
   selectInput(
     inputId = "action",
     label = "Parameters",
-    choices = Jira_reduced$date_created, Jira_reduced$date_updated, Jira_reduced$date_resolved
+    choices=colnames(Jira_reduced),
+    selected = "date_created"
   ),
   sliderInput(
-    inputId = "start_date", 
+    inputId = "start_date_resolved", 
               label = "Choose a start date", 
               value = as.Date("2019/1/1"), 
               min = as.Date("2014/1/1"), 
@@ -43,11 +47,17 @@ ui <- fluidPage(
   sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
   plotOutput("histogram")
 )
-
 server <- function(input, output) {
   output$histogram <- renderPlot({
     title <- "Resolved Bugs"
-    hist(Jira_reduced$date_resolved, main = title, breaks = input$bins, xlim = c(input$start_date, max(Jira_reduced$date_updated)))
+    hist(
+      array(c(data.matrix(Jira_reduced[,input$action]))),
+      main = input$action, 
+      breaks = input$bins,
+      density=NULL,
+      xlim = c(as.Date(input$start_date_resolved),
+max(Jira_reduced$date_created))
+    )
   })
 }
 
