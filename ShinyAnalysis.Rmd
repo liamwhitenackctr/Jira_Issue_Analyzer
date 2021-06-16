@@ -27,17 +27,6 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
-```{r}
-hist(
-      as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,"date_created"]))))*24*60*60, origin="1970-01-01")),
-      main = title, 
-      breaks = input$bins,
-      density=NULL,
-      xlim = c(as.Date(input$start_date_resolved),
-max(Jira_reduced$date_created))
-    )
-```
-
 
 ## Inputs and Outputs
 ```{r standard_code_chunk, echo=FALSE}
