@@ -19,6 +19,8 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(datasets))
 suppressPackageStartupMessages(library(anytime))
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(scales))
 Jira_reduced <- read_csv("Jira_reduced.csv")
 ```
 
@@ -26,7 +28,7 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
-```{r reference_chunk, echo=FALSE}
+```{r reference_chunk, eval=FALSE, include=FALSE}
 # the ui should contain the input and the display code
 ui <- fluidPage(
   
@@ -57,7 +59,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "action",
         label = "Parameters",
-        choices=colnames(Jira_reduced)[6:8],
+        choices=c("date_created", "date_updated", "date_resolved"),
         selected = "date_created"
       ),
       
@@ -98,7 +100,7 @@ server <- function(input, output) {
       geom_histogram(
       aes(
           #use the user-input parameter chosen as the x value
-        x = as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")),
+        x = (as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")),
           # color by priority
         fill = Jira_reduced$Priority
       ), #use the user input for bins
@@ -107,8 +109,8 @@ server <- function(input, output) {
       # the xlim is determined by the user, using input$start_date_resolved, 
       # so that they can determine how much time they want to look at. 
       # The xmax is the max of the data being looked at.
-  xlim(as.Date(input$start_date_resolved),
-max(as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")))) +
+  xlim(as.POSIXct(input$start_date_resolved),
+max((as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")))) +
       #rename the labels of the graph
   xlab(input$action)+
   ylab("Count") +
@@ -121,3 +123,73 @@ max(as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*6
 shinyApp(ui = ui, server = server)
 ```
 
+```{r scatterplot, echo=FALSE}
+# the ui should contain the input and the display code
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      
+      # create three lists of column names to be used as variables
+      
+      selectInput(
+        inputId = "xvar",
+        label = "X Variable:",
+        choices=colnames(Jira_reduced),
+        selected = "date_created"
+      ),
+      
+      selectInput(
+        inputId = "yvar",
+        label = "Y Variable:",
+        choices=colnames(Jira_reduced),
+        selected = "time_spent"
+      ),
+      
+      selectInput(
+        inputId = "color",
+        label = "Color By:",
+        choices=colnames(Jira_reduced),
+        selected = "Priority"
+      ),
+    ),
+    
+    # plot our graph
+    
+    mainPanel(
+      plotOutput("scatterplot")
+    )
+  )
+)
+# the server should contain the code for whatever uses the input
+server <- function(input, output) {
+  
+  # create the scatterplot
+  
+  output$scatterplot <- renderPlot({
+    ggplot()+
+      geom_point(
+        aes(
+          
+          # the three different selectInput() functions should determine the axis variables
+          
+          x = array(c(data.matrix((Jira_reduced[,input$xvar])))),
+          y = array(c(data.matrix((Jira_reduced[,input$yvar])))),
+          color = array(c(as.matrix(Jira_reduced[,input$color]))),
+        ), 
+        
+      ) + 
+      xlab(input$xvar)+
+      ylab(input$yvar) +
+      labs(color = input$color, title = "Defect Scatterplot") +
+      geom_smooth(
+        aes(
+          x = array(c(data.matrix((Jira_reduced[,input$xvar])))),
+          y = array(c(data.matrix((Jira_reduced[,input$yvar]))))
+        )
+      )
+  })
+}
+
+ #this code doesn't need to be edited
+shinyApp(ui = ui, server = server)
+```
