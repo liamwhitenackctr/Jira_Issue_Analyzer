@@ -42,6 +42,7 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
+
 ## Inputs and Outputs
 ```{r histogram, echo=FALSE}
 # create ui to display
@@ -134,21 +135,21 @@ ui <- fluidPage(
       selectInput(
         inputId = "xvar",
         label = "X Variable:",
-        choices=colnames(Jira_reduced),
+        choices=colnames(Jira_reduced)[6:12],
         selected = "date_created"
       ),
       
       selectInput(
         inputId = "yvar",
         label = "Y Variable:",
-        choices=colnames(Jira_reduced),
+        choices=colnames(Jira_reduced)[6:12],
         selected = "time_spent"
       ),
       
       selectInput(
         inputId = "color",
         label = "Color By:",
-        choices=colnames(Jira_reduced),
+        choices=colnames(Jira_reduced)[1:5],
         selected = "Priority"
       ),
     ),
@@ -177,7 +178,15 @@ server <- function(input, output) {
           color = array(c(as.matrix(Jira_reduced[,input$color]))),
         ), 
         
-      ) + 
+      ) +
+      xlim(
+        min(array(c(data.matrix((Jira_reduced[,input$xvar])))), na.rm = TRUE),
+        max(array(c(data.matrix((Jira_reduced[,input$xvar])))), na.rm = TRUE)
+      ) +
+      ylim(
+        min(array(c(data.matrix((Jira_reduced[,input$yvar])))), na.rm = TRUE),
+        max(array(c(data.matrix((Jira_reduced[,input$yvar])))), na.rm = TRUE)
+      ) +
       xlab(input$xvar)+
       ylab(input$yvar) +
       labs(color = input$color, title = "Defect Scatterplot") +
