@@ -26,18 +26,15 @@ This R Markdown document is made interactive using Shiny. Unlike the more tradit
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
-```{r filename_input, echo=FALSE}
+```{r reference_chunk, echo=FALSE}
 # the ui should contain the input and the display code
 ui <- fluidPage(
-  textInput("filename","Input the name of the file you want to look at:", value = "Jira_reduced.csv")
+  
 )
 # the server should contain the code for whatever uses the input
 server <- function(input, output) {
-  data_name <- reactive({input$filename})
-  print(data_name)
+  
 }
-
-
 
  #this code doesn't need to be edited
 shinyApp(ui = ui, server = server)
