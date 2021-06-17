@@ -17,29 +17,43 @@ suppressPackageStartupMessages(library(shiny))
 suppressPackageStartupMessages(library(shinythemes))
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(readr))
-library(datasets)
-library(anytime)
-Jira <- read_csv("Informedb Jira Data.csv")
-Jira_reduced <- read_csv("Jira_reduced.csv")
+suppressPackageStartupMessages(library(datasets))
+suppressPackageStartupMessages(library(anytime))
 ```
 
 This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
+```{r filename_input}
+
+```
+
+
 
 ## Inputs and Outputs
-```{r standard_code_chunk, echo=FALSE}
-# create side panels
+```{r histogram, echo=FALSE}
+# create ui to display
 ui <- fluidPage(
+  
+  #make spearate panels so that the project can be viewed side by side
+  
   sidebarLayout(
+    
+    # start a panel with interactive buttons
+    
     sidebarPanel(
+      
+      # create a dropdown list with the names of the columns that we're looking to examine
+      
       selectInput(
         inputId = "action",
         label = "Parameters",
-        choices=("Created" = "date_created", "Updated" = "date_updated", "Resolved" = "date_resolved"),
+        choices=colnames(Jira_reduced)[6:8],
         selected = "date_created"
       ),
+      
+      # create a slider that chooses the day the histogram looks at
       
       sliderInput(
         inputId = "start_date_resolved", 
@@ -49,30 +63,52 @@ ui <- fluidPage(
         max = as.Date(max(Jira_reduced$date_created)-182)
       ),
       
+      # create a slider that chooses the amount of bins on the histogram
+      
       sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
   ),
+  
+  #start a main panel to display the graphs we want
+  
   mainPanel(
+    
+    #plot the histogram made in the server function
+    
     plotOutput("histogram")
   )
   )
 )
 
+#create the server function responsible for reacting to the different sliders
+
 server <- function(input, output) {
+  
+  # create my histogram
   output$histogram <- renderPlot({
+    # use ggplot to make a plot
     ggplot()+
       geom_histogram(
       aes(
-          x = as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")),
-          fill = Jira_reduced$Priority
-      ), bins = input$bins
-  )+
+          #use the user-input parameter chosen as the x value
+        x = as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")),
+          # color by priority
+        fill = Jira_reduced$Priority
+      ), #use the user input for bins
+      bins = input$bins
+  )+ 
+      # the xlim is determined by the user, using input$start_date_resolved, 
+      # so that they can determine how much time they want to look at. 
+      # The xmax is the max of the data being looked at.
   xlim(as.Date(input$start_date_resolved),
 max(as.Date(as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, origin="1970-01-01")))) +
+      #rename the labels of the graph
   xlab(input$action)+
   ylab("Count") +
-  labs(fill = "Priority")
+  labs(fill = "Priority", title = "Defect Trends")
   })
 }
+
+# print all to the screen
 
 shinyApp(ui = ui, server = server)
 ```
