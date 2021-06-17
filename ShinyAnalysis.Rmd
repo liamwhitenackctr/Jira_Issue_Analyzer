@@ -19,17 +19,29 @@ suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(library(readr))
 suppressPackageStartupMessages(library(datasets))
 suppressPackageStartupMessages(library(anytime))
+Jira_reduced <- read_csv("Jira_reduced.csv")
 ```
 
 This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
 
 To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
 
-```{r filename_input}
+```{r filename_input, echo=FALSE}
+# the ui should contain the input and the display code
+ui <- fluidPage(
+  textInput("filename","Input the name of the file you want to look at:", value = "Jira_reduced.csv")
+)
+# the server should contain the code for whatever uses the input
+server <- function(input, output) {
+  data_name <- reactive({input$filename})
+  print(data_name)
+}
 
+
+
+ #this code doesn't need to be edited
+shinyApp(ui = ui, server = server)
 ```
-
-
 
 ## Inputs and Outputs
 ```{r histogram, echo=FALSE}
@@ -41,9 +53,8 @@ ui <- fluidPage(
   sidebarLayout(
     
     # start a panel with interactive buttons
-    
-    sidebarPanel(
       
+    sidebarPanel(
       # create a dropdown list with the names of the columns that we're looking to examine
       
       selectInput(
@@ -66,7 +77,7 @@ ui <- fluidPage(
       # create a slider that chooses the amount of bins on the histogram
       
       sliderInput(inputId = "bins", label = "Choose the number of bins", value = 12, min = 6, max = 60, step = 6),
-  ),
+    ),
   
   #start a main panel to display the graphs we want
   
