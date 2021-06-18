@@ -176,6 +176,7 @@ server <- function(input, output) {
           x = array(c(data.matrix((Jira_reduced[,input$xvar])))),
           y = array(c(data.matrix((Jira_reduced[,input$yvar])))),
           color = array(c(as.matrix(Jira_reduced[,input$color]))),
+          na.rm = TRUE
         ), 
         
       ) +
