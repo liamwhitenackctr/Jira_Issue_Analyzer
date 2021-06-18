@@ -1,11 +1,10 @@
 ---
 title: "Informedb Analysis"
 author: "Liam Whitenack"
-date: "r Sys.Date()"
+date: "2021-06-18"
 output: html_document
 runtime: shiny
 ---
-
 ```{r setup, include=FALSE}
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(infer))
@@ -23,11 +22,6 @@ suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(scales))
 Jira_reduced <- read_csv("Jira_reduced.csv")
 ```
-
-This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
-
-To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
-
 ```{r reference_chunk, eval=FALSE, include=FALSE}
 # the ui should contain the input and the display code
 ui <- fluidPage(
@@ -134,14 +128,14 @@ ui <- fluidPage(
       selectInput(
         inputId = "xvar",
         label = "X Variable:",
-        choices=colnames(Jira_reduced)[6:12],
+        choices=colnames(Jira_reduced)[6:8],
         selected = "date_created"
       ),
       
       selectInput(
         inputId = "yvar",
         label = "Y Variable:",
-        choices=colnames(Jira_reduced)[6:12],
+        choices=colnames(Jira_reduced)[9:12],
         selected = "time_spent"
       ),
       
@@ -246,4 +240,46 @@ server <- function(input, output) {
  #this code doesn't need to be edited
 shinyApp(ui = ui, server = server)
 ```
+```{r summary_stats, echo=FALSE}
+# the ui should contain the input and the display code
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        inputId = "group",
+        label = "Group by:",
+        choices=colnames(Jira_reduced)[1:5],
+        selected = "Priority"
+      ),
+    ),
+    mainPanel(
+      tableOutput("sum_stats")
+    )
+  )
+)
+# the server should contain the code for whatever uses the input
+server <- function(input, output) {
+  output$sum_stats <- renderTable({
+  Jira_reduced %>%
+  group_by_(input$group) %>%
+    summarise( 
+      `Defects` = n(), 
+      # count the number of rows that were created in the last 28 days
+      MTTR = (mean((repair_time), na.rm = TRUE)), 
+      # Repair time average
+      FFA = sum(failed_fix), 
+      # the number of "closed" issues i.e. issues that were opened 
+      # and then closed because they couldn't be fixed
+      DRE = sum(completed) / n(), 
+      # count the number of rows marked as completed
+      Open = sum(open) 
+      # count the number of rows that aren't closed or resolved
+    )
+  })
+}
+
+ #this code doesn't need to be edited
+shinyApp(ui = ui, server = server)
+```
+
 
