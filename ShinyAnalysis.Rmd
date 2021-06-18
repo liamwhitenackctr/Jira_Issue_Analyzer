@@ -123,7 +123,6 @@ max((as.POSIXct(array(c(data.matrix((Jira_reduced[,input$action]))))*24*60*60, o
 
 shinyApp(ui = ui, server = server)
 ```
-
 ```{r scatterplot, echo=FALSE}
 # the ui should contain the input and the display code
 ui <- fluidPage(
@@ -203,3 +202,48 @@ server <- function(input, output) {
  #this code doesn't need to be edited
 shinyApp(ui = ui, server = server)
 ```
+```{r time_spent_hist, echo=FALSE}
+# the ui should contain the input and the display code
+ui <- fluidPage(
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(
+        inputId = "time",
+        label = "Choose your Column:",
+        choices=c("time_spent", "repair_time"),
+        selected = "date_created"
+      ),
+      sliderInput(
+        inputId = "max_time", 
+        label = "Choose a range:", 
+        value = (max(Jira_reduced$time_spent)-500), 
+        min = 31, 
+        max = (max(Jira_reduced$time_spent))
+      ),
+      sliderInput(
+        inputId = "breaks", 
+        label = "Choose the number of bins:", 
+        value = 10, 
+        min = 5, 
+        max = 20
+        ),
+    ),
+    mainPanel(
+      plotOutput("histy")
+    )
+  )
+)
+# the server should contain the code for whatever uses the input
+server <- function(input, output) {
+  output$histy <- renderPlot({
+  ggplot()+
+    geom_histogram(aes(x = array(c(data.matrix(Jira_reduced[,input$time]))), fill = Jira_reduced$Priority), bins=input$breaks) +
+                     xlim(0, as.numeric(input$max_time)) +
+      xlab(input$time)
+  })
+}
+
+ #this code doesn't need to be edited
+shinyApp(ui = ui, server = server)
+```
+
