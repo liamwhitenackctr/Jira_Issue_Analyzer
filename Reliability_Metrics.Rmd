@@ -190,7 +190,7 @@ Q1rt <- quantile(Jira_bugs$repair_time, na.rm = TRUE, .25)
 Q3rt <- quantile(Jira_bugs$repair_time, na.rm = TRUE, .75)
 ```
 ```{r no_outliers, echo=FALSE}
-for(i in 1:length(Jira_reduced$Priority)){
+for(i in 1:length(Jira_bugs$Priority)){
   if((Jira_bugs$time_spent[i] < Q1ts) || (Jira_bugs$time_spent[i] > Q3ts)){
     Jira_bugs$time_spent_no_outliers[i] <- NA
   }
@@ -334,13 +334,44 @@ Summary_Statistics <- Jira_reduced %>%
 write_csv(Summary_Statistics, "Summary_Statistics.csv") 
 # write my software quality metrics to their own file
 ```
-```{r Jira_reduced.csv}
-write_csv(Jira_reduced, "Jira_reduced.csv") 
-# save the organized data to a new and improved file
-```
 ```{r}
 Defect_Trends
 ```
 ```{r}
 Summary_Statistics
+```
+```{r eval=FALSE, include=FALSE}
+Jira_reduced <- Jira_reduced %>%
+  mutate(
+    `Date Created` = date_created,
+    `Date Updated` = date_updated,
+    `Date Resolved` = date_resolved,
+    `Time Spent` = time_spent,
+    `Time Spent (Without Outliers)` = time_spent_no_outliers,
+    `Repair Time` = repair_time,
+    `Repair Time (Without Outliers)` = repair_time_no_outliers
+  )
+Jira_tidy <- Jira_reduced %>%
+  select(
+    Priority,
+    Status,
+    Assignee,
+    Reporter,
+    Creator,
+    `Date Created`,
+    `Date Updated`,
+    `Date Resolved`,
+    `Time Spent`,
+    `Time Spent (Without Outliers)`,
+    `Repair Time`,
+    `Repair Time (Without Outliers)`,
+    completed,
+    open,
+    failed_fix,
+    last28
+  )
+```
+```{r Jira_reduced.csv}
+write_csv(Jira_tidy, "Jira_tidy.csv") 
+# save the organized data to a new and improved file
 ```
