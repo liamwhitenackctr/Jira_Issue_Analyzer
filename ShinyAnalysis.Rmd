@@ -135,14 +135,14 @@ ui <- fluidPage(
       selectInput(
         inputId = "yvar",
         label = "Y Variable:",
-        choices=colnames(Jira_reduced)[9:12],
+        choices=colnames(Jira_reduced)[10:13],
         selected = "time_spent"
       ),
       
       selectInput(
         inputId = "color",
         label = "Color By:",
-        choices=colnames(Jira_reduced)[1:5],
+        choices=colnames(Jira_reduced)[1:6],
         selected = "Priority"
       ),
     ),
@@ -248,7 +248,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "group",
         label = "Group by:",
-        choices=colnames(Jira_reduced)[1:5],
+        choices=colnames(Jira_reduced)[1:6],
         selected = "Priority"
       ),
     ),
