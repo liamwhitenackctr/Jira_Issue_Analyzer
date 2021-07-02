@@ -117,19 +117,61 @@ Jira_bugs <- Jira_bugs %>%
     mutate(
       Priority = recode(
        Priority,
-          `1 - Trivial` = "R4",
-          `Trivial` = "R4",
-          `2 - Minor` = "R4",
-          `Minor` = "R4",
-          `3 - Major` = "R3",
-          `Major` = "R3",
-          `4 - Critical` = "R2",
-          `Critical` = "R2",
-          `5 - Blocker` = "R1",
-          `Blocker` = "R1",
+#          `1 - Trivial` = "R4",
+          `Trivial` = "1 - Trivial",
+#          `2 - Minor` = "R4",
+          `Minor` = "2 - Minor",
+#          `3 - Major` = "R3",
+          `Major` = "3 - Major",
+#          `4 - Critical` = "R2",
+          `Critical` = "4 - Crtitical",
+#          `5 - Blocker` = "R1",
+          `Blocker` = "5 - Blocker",
       ), 
       # Rename each value to R1, R2, R3, and R4, 
       # the military's preferred terms.
+      Assignee_dev = recode(
+       Assignee,
+          `DanielBiester` = TRUE,
+          `DavidTuell` = TRUE,
+          `DrewPolhamus` = TRUE,
+          `JosephWallace` = TRUE,
+          `MasonVines` = TRUE,
+          `MattChild` = TRUE,
+          `NancyKraus` = TRUE,
+          `PeterMorrissey` = TRUE,
+          `PeteSchatz` = TRUE,
+          `ScottSummerford` = TRUE,
+          .default = FALSE
+      ), 
+      Reporter_dev = recode(
+       Reporter,
+          `DanielBiester` = TRUE,
+          `DavidTuell` = TRUE,
+          `DrewPolhamus` = TRUE,
+          `JosephWallace` = TRUE,
+          `MasonVines` = TRUE,
+          `MattChild` = TRUE,
+          `NancyKraus` = TRUE,
+          `PeterMorrissey` = TRUE,
+          `PeteSchatz` = TRUE,
+          `ScottSummerford` = TRUE,
+          .default = FALSE
+      ),
+      Creator_dev = recode(
+       Creator,
+          `DanielBiester` = TRUE,
+          `DavidTuell` = TRUE,
+          `DrewPolhamus` = TRUE,
+          `JosephWallace` = TRUE,
+          `MasonVines` = TRUE,
+          `MattChild` = TRUE,
+          `NancyKraus` = TRUE,
+          `PeterMorrissey` = TRUE,
+          `PeteSchatz` = TRUE,
+          `ScottSummerford` = TRUE,
+          .default = FALSE
+      ),
       completed = recode(
         Status,
         Resolved = TRUE,
@@ -230,6 +272,9 @@ Jira_reduced <- Jira_bugs %>%
     completed, # TRUE if completed, FALSE if not
     open, # TRUE if open, FALSE if not
     failed_fix, # TRUE if "closed", FALSE if not
+    Assignee_dev, # TRUE if the project was assigned to a dev
+    Reporter_dev, # TRUE if reported by a dev
+    Creator_dev # TRUE if created by a dev
   )
 ```
 ```{r index_365}
@@ -288,6 +333,33 @@ for(i in counter:length(Jira_reduced$date_created)){
   }
 }
 ```
+```{r index_28}
+# This code block will do the same thing as before,
+# but uses the last 28 days instead of 365.
+# Because this is being used for summary statistics and not a graph,
+# this block will record a "TRUE" or "FALSE" for each row
+# to be later added onto the tibble
+n <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(is.na(Jira_reduced$Assignee[i])){
+    index_a <- FALSE
+    n = 1
+  }
+  else{
+    index_a <- TRUE
+    n = 1
+  }
+}
+for(i in 2:length(Jira_reduced$date_created)){
+  if(is.na(Jira_reduced$Assignee[i])){
+    index_a <- c(index_a, FALSE)
+  }
+  else{
+    index_a <- c(index_a, TRUE)
+  }
+}
+```
 ```{r Jira_reduced_year}
 # make a new tibble with only the rows selected from the earlier code block.
 # The array contains the row number of every issue listed over the last week
@@ -299,7 +371,8 @@ Jira_reduced_year <- Jira_reduced[c(index_365), ]
 # FALSE if the issue was created before
 Jira_reduced <- Jira_reduced %>%
   mutate(
-    last28 = index_28
+    last28 = index_28,
+    assigned = index_a
   )
 ```
 ## Summary Statistics
@@ -340,7 +413,7 @@ Defect_Trends
 ```{r}
 Summary_Statistics
 ```
-```{r eval=FALSE, include=FALSE}
+```{r muatate_reduced}
 Jira_reduced <- Jira_reduced %>%
   mutate(
     `Date Created` = date_created,
@@ -349,8 +422,13 @@ Jira_reduced <- Jira_reduced %>%
     `Time Spent` = time_spent,
     `Time Spent (Without Outliers)` = time_spent_no_outliers,
     `Repair Time` = repair_time,
-    `Repair Time (Without Outliers)` = repair_time_no_outliers
+    `Repair Time (Without Outliers)` = repair_time_no_outliers,
+    `Assigned to a Developer` = Assignee_dev,
+    `Created by a Developer` = Creator_dev,
+    `Reported by a Developer` = Reporter_dev
   )
+```
+```{r Jira_tidy_select}
 Jira_tidy <- Jira_reduced %>%
   select(
     Priority,
@@ -368,10 +446,36 @@ Jira_tidy <- Jira_reduced %>%
     completed,
     open,
     failed_fix,
-    last28
+    assigned,
+    last28,
+    `Assigned to a Developer`,
+    `Created by a Developer`,
+    `Reported by a Developer`
   )
 ```
 ```{r Jira_reduced.csv}
 write_csv(Jira_tidy, "Jira_tidy.csv") 
 # save the organized data to a new and improved file
 ```
+```{r Summary_Statistics}
+# Calculate the summary statistics by their Priority
+PowerPointData <- Jira_reduced %>%
+  group_by(Priority) %>%
+  summarise(
+    Assigned_dev = sum(`Assigned to a Developer`, na.rm=TRUE),
+    Created_dev = sum(`Created by a Developer`, na.rm=TRUE),
+    Reported_dev = sum(`Reported by a Developer`, na.rm=TRUE),
+    Defects = n(), 
+    # count the number of rows that were created in the last 28 days
+    MTTR = (mean((repair_time), na.rm = TRUE)), 
+    # Repair time average
+    FFA = sum(failed_fix), 
+    # the number of "closed" issues i.e. issues that were opened 
+    # and then closed because they couldn't be fixed
+    DRE = sum(completed) / n(), 
+    # count the number of rows marked as completed
+    Open = sum(open) 
+    # count the number of rows that aren't closed or resolved
+  )
+```
+
