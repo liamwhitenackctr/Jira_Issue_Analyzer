@@ -66,4 +66,8 @@ I will be addressing the issue by mining all the data available on Jira for the 
 •	Open- the number of projects that are left as "open"
 
 
+Each parameter is found with the following method:  
 
+* Defect Trends: This is reported as a histogram which reflects the number of bugs recorded in each period
+
+* Defects in the last four weeks: In Jira, this would be calculated by counting the number of rows created in the last 28 days. Because this is a legacy project, the last 28 days of issues being created is used.

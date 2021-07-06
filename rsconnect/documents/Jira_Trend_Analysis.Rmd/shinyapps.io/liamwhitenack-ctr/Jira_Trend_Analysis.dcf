@@ -1,0 +1,13 @@
+name: Jira_Trend_Analysis
+title: Jira_Trend_Analysis
+username:
+account: liamwhitenack-ctr
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4311348
+bundleId: 4755799
+url: https://liamwhitenack-ctr.shinyapps.io/Jira_Trend_Analysis/
+when: 1624624834.75895
+lastSyncTime: 1624624834.75895
+asMultiple: FALSE
+asStatic: FALSE
