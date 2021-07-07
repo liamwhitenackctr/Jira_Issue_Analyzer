@@ -37,6 +37,7 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
+
 ## Problem Statement
 This project was made to analyze SimVentions' Reliability regarding the Informedb project using the reports on Jira.  
 By opening the project Informedb (INF) on https://jira.dev.simventions.com/secure/Dashboard.jspa, you can look at the original project. Informedb was chosen by my mentors because of its extensive history.  
@@ -167,21 +168,21 @@ ui <- fluidPage(
       selectInput(
         inputId = "xvar",
         label = "X Variable:",
-        choices=colnames(Jira_tidy)[7:9],
+        choices=c("Date Created",  "Date Updated",  "Date Resolved"),
         selected = "Date Created"
       ),
       
       selectInput(
         inputId = "yvar",
         label = "Y Variable:",
-        choices=colnames(Jira_tidy)[10:13],
+        choices=c("Time Spent", "Time Spent (Without Outliers)", "Repair Time", "Repair Time (Without Outliers)"),
         selected = "Time Spent"
       ),
       
       selectInput(
         inputId = "color",
         label = "Color By:",
-        choices=colnames(Jira_tidy)[1:6],
+        choices=c("Priority", "Status", "Issue_Type", "Assigned_to_a_Developer", "Created_by_a_Developer", "Reported_by_a_Developer"),
         selected = "Priority"
       )
     ),
@@ -286,52 +287,6 @@ shinyApp(ui = ui, server = server)
 
 ## Summary Statistics
 This table allows a clear look at each parameter. Some of the columns can be redundant when the rows are grouped differently, but changing the configuration can provide useful insights.
-
-
-```{r dev_stats, eval=FALSE, include=FALSE}
-# the ui should contain the input and the display code
-ui <- fluidPage(
-  sidebarLayout(
-    sidebarPanel(
-      selectInput(
-        inputId = "group",
-        label = "Group by:",
-        choices=colnames(Jira_tidy)[19:21],
-        selected = "Priority"
-      ),
-    ),
-    mainPanel(
-      tableOutput("sum_stats")
-    )
-  )
-)
-# the server should contain the code for whatever uses the input
-server <- function(input, output) {
-  output$sum_stats <- renderTable({
-  Jira_tidy %>%
-  group_by_(input$group) %>%
-    summarise( 
-      `Defects` = n(), 
-      # count the number of rows that were created in the last 28 days
-      MTTR = (mean((`Repair Time`), na.rm = TRUE)), 
-      # Repair time average
-      FFA = sum(failed_fix), 
-      # the number of "closed" issues i.e. issues that were opened 
-      # and then closed because they couldn't be fixed
-      Open = sum(open),
-      # count the number of rows that aren't closed or resolved
-      Assigned = sum(assigned),
-      # count the number of rows that have an assignee
-      DRE = scales::percent(sum(completed) / n()), 
-      # count the number of rows marked as completed
-      `Assign Percent` = scales::percent(sum(assigned)/n())
-    )
-  })
-}
-
- #this code doesn't need to be edited
-shinyApp(ui = ui, server = server)
-```    
   
 ```{r summary_stats, echo=FALSE}
 # the ui should contain the input and the display code
@@ -341,7 +296,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "group",
         label = "Group by:",
-        choices=colnames(Jira_tidy)[1:6],
+        choices=c("Priority", "Status", "Issue_Type", "Assigned_to_a_Developer", "Created_by_a_Developer", "Reported_by_a_Developer"),
         selected = "Priority"
       ),
     ),
@@ -360,7 +315,7 @@ server <- function(input, output) {
       # count the number of rows that were created in the last 28 days
       MTTR = (mean((`Repair Time`), na.rm = TRUE)), 
       # Repair time average
-      FFA = sum(failed_fix), 
+      Closed = sum(failed_fix), 
       # the number of "closed" issues i.e. issues that were opened 
       # and then closed because they couldn't be fixed
       Open = sum(open),
@@ -387,7 +342,7 @@ Total Number of reported bugs.
 * MTTR – Mean time to repair:  
 This parameter is calculated by finding the mean of the repair time. Repair time should be calculated by subtracting the date the issue was put "in progress" from the day the project was resolved. Unfortunately, This parameter is found using the day the issue was made because the day the issue was put "in progress" is not available.  
 
-* FFA:  
+* Closed:  
 Number of defects that were determined by the team to be left alone without being resolved. These bugs were then moved to the "Closed" column.  
 
 * Open:  
