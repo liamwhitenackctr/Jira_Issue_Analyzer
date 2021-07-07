@@ -1,0 +1,13 @@
+name: Informedb_Analysis
+title: Informedb_Analysis
+username:
+account: liamwhitenack-ctr
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4362462
+bundleId: 4796668
+url: https://liamwhitenack-ctr.shinyapps.io/Informedb_Analysis/
+when: 1625680821.66366
+lastSyncTime: 1625680821.66366
+asMultiple: FALSE
+asStatic: FALSE
