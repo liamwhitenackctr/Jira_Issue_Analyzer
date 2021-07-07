@@ -1,7 +1,7 @@
 ---
-title: "Informedb Bugs Analysis"
+title: "Informedb Analysis"
 author: "Liam Whitenack"
-date: "2021-06-25"
+date: "7/7/2021"
 output: html_document
 runtime: shiny
 ---
@@ -36,6 +36,25 @@ server <- function(input, output) {
  #this code doesn't need to be edited
 shinyApp(ui = ui, server = server)
 ```
+```{r Priority_Shift, echo=FALSE}
+Jira_tidy <- Jira_tidy %>%
+  mutate(
+      Priority = recode(
+       Priority,
+          `1 - Trivial` = "R4",
+          `Trivial` = "R4'",
+          `2 - Minor` = "R4",
+          `Minor` = "R4",
+          `3 - Major` = "R3",
+          `Major` = "R3",
+          `4 - Critical` = "R2",
+          `Critical` = "R2",
+          `5 - Blocker` = "R1",
+          `Blocker` = "R1",
+      )
+)
+```
+
 
 
 ## Problem Statement
