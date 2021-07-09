@@ -43,7 +43,7 @@ suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 suppressPackageStartupMessages(library(rlang))
 suppressPackageStartupMessages(library(plotly))
-Jira <- read_csv("EMBR_Jira_Data.csv")
+Jira <- read_csv("Informedb Jira Data.csv")
 ```
 # Tidy Data
 ## Create the resolved column
@@ -399,11 +399,10 @@ summary_stats <- Jira_bugs %>%
     # count the number of rows that aren't closed or resolved
   ) 
 ```
-```
 # Output
 ```{r write_csv}
 write_csv(Jira_tidy, "Informedb_tidy.csv")
-write_csv(Jira_bugs, "NSWCCD_data.csv")
-write_csv(summary_stats, "Reliability_Metrics.csv")
+write_csv(Jira_bugs, "Informedb_NSWCCD_data.csv")
+write_csv(summary_stats, "Informedb_Reliability_Metrics.csv")
 ```
 
