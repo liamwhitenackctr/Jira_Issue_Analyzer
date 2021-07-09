@@ -43,60 +43,9 @@ suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 suppressPackageStartupMessages(library(rlang))
 suppressPackageStartupMessages(library(plotly))
-#GitLab <- read_csv("Informedb Gitlab Data.csv")
-Jira <- read_csv("Informedb Jira Data.csv")
+Jira <- read_csv("EMBR_Jira_Data.csv")
 ```
 # Tidy Data
-```{r GitLab, eval=FALSE, include=FALSE}
-# this code block makes the GitLab data accessible. Unfortunately, this data is no longer helpful for my project, so it is not included. 
-
-GitLab <- GitLab %>%
-  mutate(
-    author_date = as.Date(strptime(author_date, 
-                                   format = "%a %b %d %H:%M:%S %Y")),
-    committer_date = as.Date(strptime(committer_date, 
-                                      format = "%a %b %d %H:%M:%S %Y")) 
-    # read columns as dates instead of characters
-  )
-
-GitLab_reduced <- GitLab %>%
-  select(
-    author_date,
-    committer_date
-  )
-```
-```{r Number_of_weeks, eval=FALSE, include=FALSE}
-# calculate the number of weeks
-Number_of_weeks <- (max(Jira_reduced$date_updated) - min(Jira_reduced$date_created)) / 7 #last day minus first day divided by 7
-Number_of_weeks <- as.numeric(Number_of_weeks) # change to a rational number instead of a function of time
-```
-```{r bug_index}
-# record the row number of each row
-
-#this while loop initializes the array and sets its first value
-n <- 0
-counter <- 0
-while(n < 1){
-  counter <- counter + 1
-  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter]
-     == "Pre-Release Bug"){
-    bug_index <- counter
-    n = 1
-    counter = counter + 1
-  }
-}
-# this for loop checks to see if the issues have the Issue Type "Bug".
-# If they do, mark their row number for later
-for(i in counter:length(Jira$`Issue Type`)){
-  if(Jira$`Issue Type`[i] == "Bug" || Jira$`Issue Type`[i] == "Pre-Release Bug"){
-    bug_index <- c(bug_index, i)
-  }
-}
-```
-```{r Jira_bugs}
-# make a new tibble with only the rows recorded in bug_index
-Jira_bugs <- Jira[c(bug_index), ]
-```
 ```{r resolved_date}
 # This code block updates the "Resolved" column.
 # The resolved column only contains a value if the row's value in the Status
@@ -146,20 +95,6 @@ Jira_bugs <- Jira_bugs %>%
       ), 
       Reporter_dev = recode(
        Reporter,
-          `DanielBiester` = TRUE,
-          `DavidTuell` = TRUE,
-          `DrewPolhamus` = TRUE,
-          `JosephWallace` = TRUE,
-          `MasonVines` = TRUE,
-          `MattChild` = TRUE,
-          `NancyKraus` = TRUE,
-          `PeterMorrissey` = TRUE,
-          `PeteSchatz` = TRUE,
-          `ScottSummerford` = TRUE,
-          .default = FALSE
-      ),
-      Creator_dev = recode(
-       Creator,
           `DanielBiester` = TRUE,
           `DavidTuell` = TRUE,
           `DrewPolhamus` = TRUE,
@@ -255,12 +190,12 @@ Jira_reduced <- Jira_bugs %>%
   select(
     Priority, # The importance of fixing each bug R1 is the highest importance,
     # R4 is the lowest
+    `Issue Type`,
     Status, # the status of each progress i.e ""In progress",
     # "todo", or "resolved"
     Assignee, # The person assigned to the issue.
     # Most issues do not typically have an assignee
     Reporter, #Typically the same as the creator  
-    Creator, # The person creaing the issue
     date_created, # The day each issue was first created
     date_updated, # The last time the issue was edited
     date_resolved, # The last time the issue was edited
@@ -274,7 +209,6 @@ Jira_reduced <- Jira_bugs %>%
     failed_fix, # TRUE if "closed", FALSE if not
     Assignee_dev, # TRUE if the project was assigned to a dev
     Reporter_dev, # TRUE if reported by a dev
-    Creator_dev # TRUE if created by a dev
   )
 ```
 ```{r index_365}
@@ -416,6 +350,7 @@ Summary_Statistics
 ```{r muatate_reduced}
 Jira_reduced <- Jira_reduced %>%
   mutate(
+    Issue_Type = `Issue Type`,
     `Date Created` = date_created,
     `Date Updated` = date_updated,
     `Date Resolved` = date_resolved,
@@ -424,7 +359,6 @@ Jira_reduced <- Jira_reduced %>%
     `Repair Time` = repair_time,
     `Repair Time (Without Outliers)` = repair_time_no_outliers,
     `Assigned to a Developer` = Assignee_dev,
-    `Created by a Developer` = Creator_dev,
     `Reported by a Developer` = Reporter_dev
   )
 ```
@@ -432,10 +366,10 @@ Jira_reduced <- Jira_reduced %>%
 Jira_tidy <- Jira_reduced %>%
   select(
     Priority,
+    `Issue_Type`,
     Status,
     Assignee,
     Reporter,
-    Creator,
     `Date Created`,
     `Date Updated`,
     `Date Resolved`,
@@ -449,12 +383,11 @@ Jira_tidy <- Jira_reduced %>%
     assigned,
     last28,
     `Assigned to a Developer`,
-    `Created by a Developer`,
     `Reported by a Developer`
   )
 ```
 ```{r Jira_reduced.csv}
-write_csv(Jira_tidy, "Jira_tidy.csv") 
+write_csv(Jira_tidy, "Informedb_tidy.csv") 
 # save the organized data to a new and improved file
 ```
 ```{r Summary_Statistics}
@@ -463,7 +396,6 @@ PowerPointData <- Jira_reduced %>%
   group_by(Priority) %>%
   summarise(
     Assigned_dev = sum(`Assigned to a Developer`, na.rm=TRUE),
-    Created_dev = sum(`Created by a Developer`, na.rm=TRUE),
     Reported_dev = sum(`Reported by a Developer`, na.rm=TRUE),
     Defects = n(), 
     # count the number of rows that were created in the last 28 days
@@ -478,4 +410,56 @@ PowerPointData <- Jira_reduced %>%
     # count the number of rows that aren't closed or resolved
   )
 ```
+# Create a Dataset for the Military Presentation
+## List every column marked with "bug"
+```{r bug_index}
+# record the row number of each row
 
+#this while loop initializes the array and sets its first value
+n <- 0
+counter <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter]
+     == "Pre-Release Bug"){
+    bug_index <- counter
+    n = 1
+    counter = counter + 1
+  }
+}
+# this for loop checks to see if the issues have the Issue Type "Bug".
+# If they do, mark their row number for later
+for(i in counter:length(Jira$`Issue Type`)){
+  if(Jira$`Issue Type`[i] == "Bug" || Jira$`Issue Type`[i] == "Pre-Release Bug"){
+    bug_index <- c(bug_index, i)
+  }
+}
+```
+## Rename Priorities
+```{r Priority_rename}
+# This code block's function is to rename all of the Priorities to the military's preferred terms.
+
+Jira_tidy <- Jira_tidy %>%
+  mutate(
+      Priority = recode(
+       Priority,
+          `1 - Trivial` = "R4",
+          `Trivial` = "R4'",
+          `2 - Minor` = "R4",
+          `Minor` = "R4",
+          `3 - Major` = "R3",
+          `Major` = "R3",
+          `4 - Critical` = "R2",
+          `Critical` = "R2",
+          `5 - Blocker` = "R1",
+          `Blocker` = "R1",
+      )
+)
+```
+## Create new dataset with only bugs
+```{r Jira_bugs}
+# make a new tibble with only the rows recorded in bug_index
+Jira_bugs <- Jira_tidy[c(bug_index),]
+write_csv(Jira_bugs, "NSWCCD_data.csv")
+write_csv(summary_stats, "Summary_Statistics.csv")
+```
