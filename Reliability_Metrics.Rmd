@@ -46,23 +46,25 @@ suppressPackageStartupMessages(library(plotly))
 Jira <- read_csv("EMBR_Jira_Data.csv")
 ```
 # Tidy Data
+## Create the resolved column
 ```{r resolved_date}
 # This code block updates the "Resolved" column.
 # The resolved column only contains a value if the row's value in the Status
 # column is "Resolved". 
 # If the logical statement is TRUE then the Resolved column's value is the same
 # as the Updated column.
-for(i in 1:length(Jira_bugs$Status)){
-  Jira_bugs$Resolved[i]<-NA
+for(i in 1:length(Jira$Status)){
+  Jira$Resolved[i]<-NA
 }
-for(i in 1:length(Jira_bugs$Status)){
-        if(Jira_bugs$Status[i] == "Resolved"){
-          Jira_bugs$Resolved[i]<-Jira_bugs$Updated[i]
+for(i in 1:length(Jira$Status)){
+        if(Jira$Status[i] == "Resolved"){
+          Jira$Resolved[i]<-Jira$Updated[i]
         }
 }
 ```
+## Rename columns for computation
 ```{r mutate_Jira}
-Jira_bugs <- Jira_bugs %>%
+Jira <- Jira %>%
     mutate(
       Priority = recode(
        Priority,
@@ -144,6 +146,12 @@ Jira_bugs <- Jira_bugs %>%
       Parent = `Parent id`,
       Issue = `Issue id`,
       Type = `Issue Type`,
+)
+```
+## Create new useful columns from old ones
+```{r calculations}
+Jira <- Jira %>%
+    mutate(
       date_created = as.Date(strptime(Created, format = "%m/%d/%Y %H:%M")),
       date_updated = as.Date(strptime(Updated, format = "%m/%d/%Y %H:%M")),
       date_resolved = as.Date(strptime(Resolved, format = "%m/%d/%Y %H:%M")), 
@@ -160,33 +168,37 @@ Jira_bugs <- Jira_bugs %>%
       # create a row with a new name to be written later
     )
 ```
+## Make a two time columns without outliers
+### Create repair time and time spent IQRs
 ```{r IQR, echo=FALSE}
-Q1ts <- quantile(Jira_bugs$time_spent, .25)
-Q3ts <- quantile(Jira_bugs$time_spent, .75)
-Q1rt <- quantile(Jira_bugs$repair_time, na.rm = TRUE, .25)
-Q3rt <- quantile(Jira_bugs$repair_time, na.rm = TRUE, .75)
+Q1ts <- quantile(Jira$time_spent, .25)
+Q3ts <- quantile(Jira$time_spent, .75)
+Q1rt <- quantile(Jira$repair_time, na.rm = TRUE, .25)
+Q3rt <- quantile(Jira$repair_time, na.rm = TRUE, .75)
 ```
+### Get rid of the cells that are outliers
 ```{r no_outliers, echo=FALSE}
-for(i in 1:length(Jira_bugs$Priority)){
-  if((Jira_bugs$time_spent[i] < Q1ts) || (Jira_bugs$time_spent[i] > Q3ts)){
-    Jira_bugs$time_spent_no_outliers[i] <- NA
+for(i in 1:length(Jira$Priority)){
+  if((Jira$time_spent[i] < Q1ts) || (Jira$time_spent[i] > Q3ts)){
+    Jira$time_spent_no_outliers[i] <- NA
   }
   else{
-    Jira_bugs$time_spent_no_outliers[i] <- Jira_bugs$time_spent[i]
+    Jira$time_spent_no_outliers[i] <- Jira$time_spent[i]
   }
-  if(is.na(Jira_bugs$repair_time[i]) == FALSE){
-    if(((Jira_bugs$repair_time[i] < Q1rt) || (Jira_bugs$repair_time[i] > Q3rt))){
-      Jira_bugs$repair_time_no_outliers[i] <- NA
+  if(is.na(Jira$repair_time[i]) == FALSE){
+    if(((Jira$repair_time[i] < Q1rt) || (Jira$repair_time[i] > Q3rt))){
+      Jira$repair_time_no_outliers[i] <- NA
     }
     else{
-      Jira_bugs$repair_time_no_outliers[i] <- Jira_bugs$repair_time[i]
+      Jira$repair_time_no_outliers[i] <- Jira$repair_time[i]
     }
   }
 }
 ```
+## Select only the columns being used
 ```{r Jira_reduced}
 # Select only the rows I need
-Jira_reduced <- Jira_bugs %>%
+Jira_reduced <- Jira %>%
   select(
     Priority, # The importance of fixing each bug R1 is the highest importance,
     # R4 is the lowest
@@ -211,32 +223,7 @@ Jira_reduced <- Jira_bugs %>%
     Reporter_dev, # TRUE if reported by a dev
   )
 ```
-```{r index_365}
-# This code block will test to see if the date_created was in the last 365 days
-# and create an array that contains all
-# of the row numbers we want
-
-# Initialize the array and set the first value 
-    # Note: there is probably a much more efficient way of initializing an array.
-    # I do not know what the method is, so this will have to do.
-n <- 0
-counter <- 0
-while(n < 1){ # this while statement will set the first value of the array
-  counter <- counter + 1
-  if(Jira_reduced$date_created[counter] > (max(Jira_reduced$date_created)-365)){
-    index_365 <- counter
-    n = 1
-    counter = counter + 1
-  }
-}
-# if the date created is greater than the last day anything was created - 365,
-# record that row number in an array
-for(i in counter:length(Jira_reduced$date_created)){ 
-  if(Jira_reduced$date_created[i] > (max(Jira_reduced$date_created)-365)){
-    index_365 <- c(index_365, i)
-  }
-}
-```
+## make a column that indicates whether the bug was created in the last 28 days
 ```{r index_28}
 # This code block will do the same thing as before,
 # but uses the last 28 days instead of 365.
@@ -294,11 +281,6 @@ for(i in 2:length(Jira_reduced$date_created)){
   }
 }
 ```
-```{r Jira_reduced_year}
-# make a new tibble with only the rows selected from the earlier code block.
-# The array contains the row number of every issue listed over the last week
-Jira_reduced_year <- Jira_reduced[c(index_365), ]
-```
 ```{r last28}
 # add a new row to Jira_reduced that has a value of TRUE
 # if the issue was created in the last 28 days,
@@ -309,44 +291,7 @@ Jira_reduced <- Jira_reduced %>%
     assigned = index_a
   )
 ```
-## Summary Statistics
-```{r Defect_Trends}
-# make a plot that shows the distribution of issues over the last year
-Defect_Trends <- Jira_reduced_year %>%
-  ggplot() +
-  geom_histogram(aes(x = date_created, fill = Priority), bins = 12) +
-  labs(title = "Defect Trends Histogram") +
-  xlab("Issue Date")
-```
-```{r Summary_Statistics}
-# Calculate the summary statistics by their Priority
-Summary_Statistics <- Jira_reduced %>%
-  group_by(Priority) %>%
-  summarise( 
-    `Defects in the last four weeks` = sum(last28), 
-    # count the number of rows that were created in the last 28 days
-    MTTR = (mean((repair_time), na.rm = TRUE)), 
-    # Repair time average
-    FFA = sum(failed_fix), 
-    # the number of "closed" issues i.e. issues that were opened 
-    # and then closed because they couldn't be fixed
-    DRE = sum(completed) / n(), 
-    # count the number of rows marked as completed
-    Open = sum(open) 
-    # count the number of rows that aren't closed or resolved
-  ) 
-```
-## Output
-```{r Summary_Statistics.csv}
-write_csv(Summary_Statistics, "Summary_Statistics.csv") 
-# write my software quality metrics to their own file
-```
-```{r}
-Defect_Trends
-```
-```{r}
-Summary_Statistics
-```
+## Rename the ugly columns
 ```{r muatate_reduced}
 Jira_reduced <- Jira_reduced %>%
   mutate(
@@ -362,6 +307,7 @@ Jira_reduced <- Jira_reduced %>%
     `Reported by a Developer` = Reporter_dev
   )
 ```
+## Make the completed neat dataset
 ```{r Jira_tidy_select}
 Jira_tidy <- Jira_reduced %>%
   select(
@@ -384,30 +330,6 @@ Jira_tidy <- Jira_reduced %>%
     last28,
     `Assigned to a Developer`,
     `Reported by a Developer`
-  )
-```
-```{r Jira_reduced.csv}
-write_csv(Jira_tidy, "Informedb_tidy.csv") 
-# save the organized data to a new and improved file
-```
-```{r Summary_Statistics}
-# Calculate the summary statistics by their Priority
-PowerPointData <- Jira_reduced %>%
-  group_by(Priority) %>%
-  summarise(
-    Assigned_dev = sum(`Assigned to a Developer`, na.rm=TRUE),
-    Reported_dev = sum(`Reported by a Developer`, na.rm=TRUE),
-    Defects = n(), 
-    # count the number of rows that were created in the last 28 days
-    MTTR = (mean((repair_time), na.rm = TRUE)), 
-    # Repair time average
-    FFA = sum(failed_fix), 
-    # the number of "closed" issues i.e. issues that were opened 
-    # and then closed because they couldn't be fixed
-    DRE = sum(completed) / n(), 
-    # count the number of rows marked as completed
-    Open = sum(open) 
-    # count the number of rows that aren't closed or resolved
   )
 ```
 # Create a Dataset for the Military Presentation
@@ -460,6 +382,28 @@ Jira_tidy <- Jira_tidy %>%
 ```{r Jira_bugs}
 # make a new tibble with only the rows recorded in bug_index
 Jira_bugs <- Jira_tidy[c(bug_index),]
-write_csv(Jira_bugs, "NSWCCD_data.csv")
-write_csv(summary_stats, "Summary_Statistics.csv")
 ```
+## Make Reliability Metrics
+```{r Summary_Statistics}
+# Calculate the summary statistics by their Priority
+summary_stats <- Jira_bugs %>%
+  group_by(Priority) %>%
+  summarise( 
+    `Defects in the last four weeks` = sum(last28), 
+    # count the number of rows that were created in the last 28 days
+    MTTR = (mean((`Repair Time`), na.rm = TRUE)), 
+    # Repair time average
+    DRE = sum(completed) / n(), 
+    # count the number of rows marked as completed
+    Open = sum(open) 
+    # count the number of rows that aren't closed or resolved
+  ) 
+```
+```
+# Output
+```{r write_csv}
+write_csv(Jira_tidy, "Informedb_tidy.csv")
+write_csv(Jira_bugs, "NSWCCD_data.csv")
+write_csv(summary_stats, "Reliability_Metrics.csv")
+```
+
