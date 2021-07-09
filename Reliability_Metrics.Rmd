@@ -23,7 +23,7 @@ output:
     smart: true
     dev: svg
 ---
-# Setup
+# Setup -Rename input file for different Jira projects
 ```{r setup, include = FALSE}
 # Set knitr options
 knitr::opts_chunk$set(
@@ -43,7 +43,7 @@ suppressPackageStartupMessages(library(modelr))
 suppressPackageStartupMessages(library(broom))
 suppressPackageStartupMessages(library(rlang))
 suppressPackageStartupMessages(library(plotly))
-Jira <- read_csv("Informedb Jira Data.csv")
+Jira <- read_csv("Informedb Jira Data.csv") #  -Change for different Jira projects
 ```
 # Tidy Data
 ## Create the resolved column
@@ -399,10 +399,13 @@ summary_stats <- Jira_bugs %>%
     # count the number of rows that aren't closed or resolved
   ) 
 ```
-# Output
+# Output - Rename for other Jira Projects
 ```{r write_csv}
+# This is the file for further analysis
 write_csv(Jira_tidy, "Informedb_tidy.csv")
+# This file is for reporting the reliability metrics in-depth
 write_csv(Jira_bugs, "Informedb_NSWCCD_data.csv")
+# This is for Reporting the exact metrics
 write_csv(summary_stats, "Informedb_Reliability_Metrics.csv")
 ```
 
