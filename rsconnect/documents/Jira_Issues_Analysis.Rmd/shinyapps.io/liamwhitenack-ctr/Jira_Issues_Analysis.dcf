@@ -1,0 +1,13 @@
+name: Jira_Issues_Analysis
+title: Jira_Issues_Analysis
+username:
+account: liamwhitenack-ctr
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4368896
+bundleId: 4802930
+url: https://liamwhitenack-ctr.shinyapps.io/Jira_Issues_Analysis/
+when: 1625831536.837
+lastSyncTime: 1625831536.837
+asMultiple: FALSE
+asStatic: FALSE

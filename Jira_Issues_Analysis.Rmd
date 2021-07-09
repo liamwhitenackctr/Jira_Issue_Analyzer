@@ -21,7 +21,8 @@ suppressPackageStartupMessages(library(datasets))
 suppressPackageStartupMessages(library(anytime))
 suppressPackageStartupMessages(library(ggplot2))
 suppressPackageStartupMessages(library(scales))
-Jira_tidy <- read_csv("Jira_tidy.csv")
+# Change this line if you want to use other data
+Jira_tidy <- read_csv("Informedb_tidy.csv")
 ```
 ```{r reference_chunk, eval=FALSE, include=FALSE}
 # the ui should contain the input and the display code
@@ -182,7 +183,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "color",
         label = "Color By:",
-        choices=c("Priority", "Status", "Issue_Type", "Assigned_to_a_Developer", "Created_by_a_Developer", "Reported_by_a_Developer"),
+        choices=c("Priority", "Status", "Issue_Type", "Assigned_to_a_Developer", "Reported_by_a_Developer"),
         selected = "Priority"
       )
     ),
@@ -296,7 +297,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "group",
         label = "Group by:",
-        choices=c("Priority", "Status", "Issue_Type", "Assigned_to_a_Developer", "Created_by_a_Developer", "Reported_by_a_Developer"),
+        choices=c("Priority", "Status", "Issue_Type", "Assigned_to_a_Developer", "Reported_by_a_Developer"),
         selected = "Priority"
       ),
     ),
