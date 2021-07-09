@@ -1,0 +1,411 @@
+---
+title: "Informedb Software Quality Metrics"
+author: "Liam Whitenack"
+date: "`r Sys.Date()`"
+documentclass: article
+geometry: margin=1in
+fontsize: 11pt
+output:
+  pdf_document:
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    dev: pdf
+    highlight: tango
+  html_document:
+    theme: default
+    self_contained: true
+    toc: false
+    df_print: kable
+    fig_caption: false
+    number_sections: false
+    smart: true
+    dev: svg
+---
+# Setup -Rename input file for different Jira projects
+```{r setup, include = FALSE}
+# Set knitr options
+knitr::opts_chunk$set(
+	eval = TRUE,
+	echo = TRUE,
+	fig.align = "center",
+	fig.asp = 0.618,
+	fig.width = 5,
+	cache = FALSE,
+	dpi = 120,
+	out.width = "70%"
+)
+# Load required packages
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(infer))
+suppressPackageStartupMessages(library(modelr))
+suppressPackageStartupMessages(library(broom))
+suppressPackageStartupMessages(library(rlang))
+suppressPackageStartupMessages(library(plotly))
+Jira <- read_csv("Informedb Jira Data.csv") #  -Change for different Jira projects
+```
+# Tidy Data
+## Create the resolved column
+```{r resolved_date}
+# This code block updates the "Resolved" column.
+# The resolved column only contains a value if the row's value in the Status
+# column is "Resolved". 
+# If the logical statement is TRUE then the Resolved column's value is the same
+# as the Updated column.
+for(i in 1:length(Jira$Status)){
+  Jira$Resolved[i]<-NA
+}
+for(i in 1:length(Jira$Status)){
+        if(Jira$Status[i] == "Resolved"){
+          Jira$Resolved[i]<-Jira$Updated[i]
+        }
+}
+```
+## Rename columns for computation
+```{r mutate_Jira}
+Jira <- Jira %>%
+    mutate(
+      Priority = recode(
+       Priority,
+#          `1 - Trivial` = "R4",
+          `Trivial` = "1 - Trivial",
+#          `2 - Minor` = "R4",
+          `Minor` = "2 - Minor",
+#          `3 - Major` = "R3",
+          `Major` = "3 - Major",
+#          `4 - Critical` = "R2",
+          `Critical` = "4 - Crtitical",
+#          `5 - Blocker` = "R1",
+          `Blocker` = "5 - Blocker",
+      ), 
+      # Rename each value to R1, R2, R3, and R4, 
+      # the military's preferred terms.
+      Assignee_dev = recode(
+       Assignee,
+          `DanielBiester` = TRUE,
+          `DavidTuell` = TRUE,
+          `DrewPolhamus` = TRUE,
+          `JosephWallace` = TRUE,
+          `MasonVines` = TRUE,
+          `MattChild` = TRUE,
+          `NancyKraus` = TRUE,
+          `PeterMorrissey` = TRUE,
+          `PeteSchatz` = TRUE,
+          `ScottSummerford` = TRUE,
+          .default = FALSE
+      ), 
+      Reporter_dev = recode(
+       Reporter,
+          `DanielBiester` = TRUE,
+          `DavidTuell` = TRUE,
+          `DrewPolhamus` = TRUE,
+          `JosephWallace` = TRUE,
+          `MasonVines` = TRUE,
+          `MattChild` = TRUE,
+          `NancyKraus` = TRUE,
+          `PeterMorrissey` = TRUE,
+          `PeteSchatz` = TRUE,
+          `ScottSummerford` = TRUE,
+          .default = FALSE
+      ),
+      completed = recode(
+        Status,
+        Resolved = TRUE,
+        Done = FALSE,
+        Closed = FALSE,
+        `In Progress` = FALSE,
+        `Ready For Review` = FALSE,
+        `Ready For Test` = FALSE,
+        Reopened = FALSE,
+        .default = FALSE
+      ), # set the value of each resolved issue to 1 for computational purposes
+      open = recode(
+        Status,
+        Resolved = FALSE,
+        Done = TRUE,
+        Closed = FALSE,
+        `In Progress` = TRUE,
+        `Ready For Review` = TRUE,
+        `Ready For Test` = TRUE,
+        Reopened = TRUE,
+        Todo = TRUE,
+        .default = TRUE
+      ), # set the value of each resolved issue to 1 for computational purposes
+      failed_fix = recode(
+        Status,
+        Resolved = FALSE,
+        Done = FALSE,
+        Closed = TRUE,
+        `In Progress` = FALSE,
+        `Ready For Review` = FALSE,
+        `Ready For Test` = FALSE,
+        Reopened = FALSE,
+        .default = FALSE
+      ), # set the value of each resolved issue to 1 for computational purposes
+      Parent = `Parent id`,
+      Issue = `Issue id`,
+      Type = `Issue Type`,
+)
+```
+## Create new useful columns from old ones
+```{r calculations}
+Jira <- Jira %>%
+    mutate(
+      date_created = as.Date(strptime(Created, format = "%m/%d/%Y %H:%M")),
+      date_updated = as.Date(strptime(Updated, format = "%m/%d/%Y %H:%M")),
+      date_resolved = as.Date(strptime(Resolved, format = "%m/%d/%Y %H:%M")), 
+      # read columns as dates instead of characters
+      time_spent = date_updated - date_created, 
+      # create the time_spent parameter, which is computed by finding 
+      # the difference between the date of creation and last day updated
+      time_spent_no_outliers = time_spent,
+      # create a row with a new name to be written later
+      repair_time = date_resolved - date_created,
+      # create the repair time parameter, which is computed by finding 
+      # the difference between the date of creation and day resolved
+      repair_time_no_outliers = repair_time,
+      # create a row with a new name to be written later
+    )
+```
+## Make a two time columns without outliers
+### Create repair time and time spent IQRs
+```{r IQR, echo=FALSE}
+Q1ts <- quantile(Jira$time_spent, .25)
+Q3ts <- quantile(Jira$time_spent, .75)
+Q1rt <- quantile(Jira$repair_time, na.rm = TRUE, .25)
+Q3rt <- quantile(Jira$repair_time, na.rm = TRUE, .75)
+```
+### Get rid of the cells that are outliers
+```{r no_outliers, echo=FALSE}
+for(i in 1:length(Jira$Priority)){
+  if((Jira$time_spent[i] < Q1ts) || (Jira$time_spent[i] > Q3ts)){
+    Jira$time_spent_no_outliers[i] <- NA
+  }
+  else{
+    Jira$time_spent_no_outliers[i] <- Jira$time_spent[i]
+  }
+  if(is.na(Jira$repair_time[i]) == FALSE){
+    if(((Jira$repair_time[i] < Q1rt) || (Jira$repair_time[i] > Q3rt))){
+      Jira$repair_time_no_outliers[i] <- NA
+    }
+    else{
+      Jira$repair_time_no_outliers[i] <- Jira$repair_time[i]
+    }
+  }
+}
+```
+## Select only the columns being used
+```{r Jira_reduced}
+# Select only the rows I need
+Jira_reduced <- Jira %>%
+  select(
+    Priority, # The importance of fixing each bug R1 is the highest importance,
+    # R4 is the lowest
+    `Issue Type`,
+    Status, # the status of each progress i.e ""In progress",
+    # "todo", or "resolved"
+    Assignee, # The person assigned to the issue.
+    # Most issues do not typically have an assignee
+    Reporter, #Typically the same as the creator  
+    date_created, # The day each issue was first created
+    date_updated, # The last time the issue was edited
+    date_resolved, # The last time the issue was edited
+    # IF the status is "resolved"
+    time_spent, # date updated - date created
+    time_spent_no_outliers, # time_spent without outliers
+    repair_time, # date updated - date created IF the status is "resolved"
+    repair_time_no_outliers, # repair_time without outliers
+    completed, # TRUE if completed, FALSE if not
+    open, # TRUE if open, FALSE if not
+    failed_fix, # TRUE if "closed", FALSE if not
+    Assignee_dev, # TRUE if the project was assigned to a dev
+    Reporter_dev, # TRUE if reported by a dev
+  )
+```
+## make a column that indicates whether the bug was created in the last 28 days
+```{r index_28}
+# This code block will do the same thing as before,
+# but uses the last 28 days instead of 365.
+# Because this is being used for summary statistics and not a graph,
+# this block will record a "TRUE" or "FALSE" for each row
+# to be later added onto the tibble
+n <- 0
+counter <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(Jira_reduced$date_created[counter] > (max(Jira_reduced$date_created)-28)){
+    index_28 <- TRUE
+    n = 1
+    counter = counter + 1
+  }
+  else{
+    index_28 <- FALSE
+    n = 1
+    counter = counter + 1
+  }
+}
+for(i in counter:length(Jira_reduced$date_created)){
+  if(Jira_reduced$date_created[i] > (max(Jira_reduced$date_created)-28)){
+    index_28 <- c(index_28, TRUE)
+  }
+  else{
+    index_28 <- c(index_28, FALSE)
+  }
+}
+```
+```{r index_28}
+# This code block will do the same thing as before,
+# but uses the last 28 days instead of 365.
+# Because this is being used for summary statistics and not a graph,
+# this block will record a "TRUE" or "FALSE" for each row
+# to be later added onto the tibble
+n <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(is.na(Jira_reduced$Assignee[i])){
+    index_a <- FALSE
+    n = 1
+  }
+  else{
+    index_a <- TRUE
+    n = 1
+  }
+}
+for(i in 2:length(Jira_reduced$date_created)){
+  if(is.na(Jira_reduced$Assignee[i])){
+    index_a <- c(index_a, FALSE)
+  }
+  else{
+    index_a <- c(index_a, TRUE)
+  }
+}
+```
+```{r last28}
+# add a new row to Jira_reduced that has a value of TRUE
+# if the issue was created in the last 28 days,
+# FALSE if the issue was created before
+Jira_reduced <- Jira_reduced %>%
+  mutate(
+    last28 = index_28,
+    assigned = index_a
+  )
+```
+## Rename the ugly columns
+```{r muatate_reduced}
+Jira_reduced <- Jira_reduced %>%
+  mutate(
+    Issue_Type = `Issue Type`,
+    `Date Created` = date_created,
+    `Date Updated` = date_updated,
+    `Date Resolved` = date_resolved,
+    `Time Spent` = time_spent,
+    `Time Spent (Without Outliers)` = time_spent_no_outliers,
+    `Repair Time` = repair_time,
+    `Repair Time (Without Outliers)` = repair_time_no_outliers,
+    `Assigned to a Developer` = Assignee_dev,
+    `Reported by a Developer` = Reporter_dev
+  )
+```
+## Make the completed neat dataset
+```{r Jira_tidy_select}
+Jira_tidy <- Jira_reduced %>%
+  select(
+    Priority,
+    `Issue_Type`,
+    Status,
+    Assignee,
+    Reporter,
+    `Date Created`,
+    `Date Updated`,
+    `Date Resolved`,
+    `Time Spent`,
+    `Time Spent (Without Outliers)`,
+    `Repair Time`,
+    `Repair Time (Without Outliers)`,
+    completed,
+    open,
+    failed_fix,
+    assigned,
+    last28,
+    `Assigned to a Developer`,
+    `Reported by a Developer`
+  )
+```
+# Create a Dataset for the Military Presentation
+## List every column marked with "bug"
+```{r bug_index}
+# record the row number of each row
+
+#this while loop initializes the array and sets its first value
+n <- 0
+counter <- 0
+while(n < 1){
+  counter <- counter + 1
+  if(Jira$`Issue Type`[counter] == "Bug" || Jira$`Issue Type`[counter]
+     == "Pre-Release Bug"){
+    bug_index <- counter
+    n = 1
+    counter = counter + 1
+  }
+}
+# this for loop checks to see if the issues have the Issue Type "Bug".
+# If they do, mark their row number for later
+for(i in counter:length(Jira$`Issue Type`)){
+  if(Jira$`Issue Type`[i] == "Bug" || Jira$`Issue Type`[i] == "Pre-Release Bug"){
+    bug_index <- c(bug_index, i)
+  }
+}
+```
+## Rename Priorities
+```{r Priority_rename}
+# This code block's function is to rename all of the Priorities to the military's preferred terms.
+
+Jira_tidy <- Jira_tidy %>%
+  mutate(
+      Priority = recode(
+       Priority,
+          `1 - Trivial` = "R4",
+          `Trivial` = "R4'",
+          `2 - Minor` = "R4",
+          `Minor` = "R4",
+          `3 - Major` = "R3",
+          `Major` = "R3",
+          `4 - Critical` = "R2",
+          `Critical` = "R2",
+          `5 - Blocker` = "R1",
+          `Blocker` = "R1",
+      )
+)
+```
+## Create new dataset with only bugs
+```{r Jira_bugs}
+# make a new tibble with only the rows recorded in bug_index
+Jira_bugs <- Jira_tidy[c(bug_index),]
+```
+## Make Reliability Metrics
+```{r Summary_Statistics}
+# Calculate the summary statistics by their Priority
+summary_stats <- Jira_bugs %>%
+  group_by(Priority) %>%
+  summarise( 
+    `Defects in the last four weeks` = sum(last28), 
+    # count the number of rows that were created in the last 28 days
+    MTTR = (mean((`Repair Time`), na.rm = TRUE)), 
+    # Repair time average
+    DRE = sum(completed) / n(), 
+    # count the number of rows marked as completed
+    Open = sum(open) 
+    # count the number of rows that aren't closed or resolved
+  ) 
+```
+# Output - Rename for other Jira Projects
+```{r write_csv}
+# This is the file for further analysis
+write_csv(Jira_tidy, "Informedb_tidy.csv")
+# This file is for reporting the reliability metrics in-depth
+write_csv(Jira_bugs, "Informedb_NSWCCD_data.csv")
+# This is for Reporting the exact metrics
+write_csv(summary_stats, "Informedb_Reliability_Metrics.csv")
+```
+
