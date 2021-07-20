@@ -187,7 +187,7 @@ ui <- fluidPage(
       selectInput(
         inputId = "xvar",
         label = "X Variable:",
-        choices=c("Date Created",  "Date Updated",  "Date Resolved"),
+        choices=c("Date Created",  "Date Updated",  "Date Resolved", "Characters (Without Outliers)"),
         selected = "Date Created"
       ),
       
@@ -343,7 +343,8 @@ server <- function(input, output) {
       # count the number of rows that have an assignee
       DRE = scales::percent(sum(completed) / n()), 
       # count the number of rows marked as completed
-      `Assign Percent` = scales::percent(sum(assigned)/n())
+      `Assign Percent` = scales::percent(sum(assigned)/n()),
+      `Characters in Description` = sum(Characters)/n()
     )
   })
 }
