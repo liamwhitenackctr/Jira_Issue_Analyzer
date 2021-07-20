@@ -1,0 +1,13 @@
+name: NSWCCD_Metrics_Analysis
+title: NSWCCD_Metrics_Analysis
+username:
+account: liamwhitenack-ctr
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4393010
+bundleId: 4826707
+url: https://liamwhitenack-ctr.shinyapps.io/NSWCCD_Metrics_Analysis/
+when: 1626451500.98302
+lastSyncTime: 1626451500.98302
+asMultiple: FALSE
+asStatic: FALSE
