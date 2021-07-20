@@ -396,7 +396,7 @@ for(i in counter:length(Jira$`Issue Type`)){
 ```{r Priority_rename}
 # This code block's function is to rename all of the Priorities to the military's preferred terms.
 
-Jira_tidy <- Jira_tidy %>%
+Jira_bugs <- Jira_tidy %>%
   mutate(
       Priority = recode(
        Priority,
@@ -416,7 +416,7 @@ Jira_tidy <- Jira_tidy %>%
 ## Create new dataset with only bugs
 ```{r Jira_bugs}
 # make a new tibble with only the rows recorded in bug_index
-Jira_bugs <- Jira_tidy[c(bug_index),]
+Jira_bugs <- Jira_bugs[c(bug_index),]
 ```
 ## Make Reliability Metrics
 ```{r Summary_Statistics}
