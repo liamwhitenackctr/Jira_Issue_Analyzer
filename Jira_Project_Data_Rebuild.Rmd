@@ -417,6 +417,8 @@ Jira_bugs <- Jira_tidy %>%
 ```{r Jira_bugs}
 # make a new tibble with only the rows recorded in bug_index
 Jira_bugs <- Jira_bugs[c(bug_index),]
+#write_csv(Jira_bugs, "Informedb_NSWCCD_data.csv")
+# This is for Reporting the exact metrics
 ```
 ## Make Reliability Metrics
 ```{r Summary_Statistics}
@@ -439,8 +441,6 @@ summary_stats <- Jira_bugs %>%
 # This is the file for further analysis
 write_csv(Jira_tidy, "Informedb_tidy.csv")
 # This file is for reporting the reliability metrics in-depth
-write_csv(Jira_bugs, "Informedb_NSWCCD_data.csv")
-# This is for Reporting the exact metrics
 write_csv(summary_stats, "Informedb_Reliability_Metrics.csv")
 ```
 

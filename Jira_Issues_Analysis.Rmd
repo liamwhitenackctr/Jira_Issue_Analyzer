@@ -1,5 +1,5 @@
 ---
-title: "Informedb Issues Analysis"
+title: "Jira Issues Analysis"
 author: "Liam Whitenack"
 date: "2021-06-25"
 output: html_document
@@ -40,16 +40,9 @@ shinyApp(ui = ui, server = server)
 
 
 ## Problem Statement
-This project was made to analyze SimVentions' Reliability regarding the Informedb project using the reports on Jira.  
-By opening the project Informedb (INF) on https://jira.dev.simventions.com/secure/Dashboard.jspa, you can look at the original project. Informedb was chosen by my mentors because of its extensive history.  
-
-It's important to note that Informedb is a legacy project and is now called Enterprise (EN) and stored on a separate project board.  
-
-Several "Software Quality Metrics" were requested, all of which have to be estimated to a degree Each parameter above was requested in this PowerPoint:    https://simventions.sharepoint.us/:p:/r/EC/Shared%20Documents/NSWCDD%20Software%20Quality%20Metrics_12APR21.pptx?d=w15810cbc0c744094ace80239877ff2e4&csf=1&web=1&e=kPal7h  
+This project was made to analyze SimVentions' Reliability regarding Jira data.  
   
-This project is made from exporting the data from Jira and using RStudio to only use the rows and columns necessary. Only the rows which contained the Issue Type "Bug" are being used. The "Repair Time" parameter was found by subtracting the day the issue was made from the day the issue was resolved. This is an estimation and not an ideal calculation, since the issue has not started being repaired until the issue was moved into Jira.  
-
-##### Note: "R1" indicates that the bug is a high-priority fix and "R4" indicates that the bug is a low-priority fix
+This project is made from exporting the data from Jira and using RStudio to only use the rows and columns necessary. The "Repair Time" parameter was found by subtracting the day the issue was made from the day the issue was resolved. This is an estimation and not an ideal calculation, since the issue has not started being repaired until the issue was moved into Jira.  
 
 ```{r stats, eval=FALSE, include=FALSE}
 summary_stats <- read_csv("summary_Statistics.csv")
@@ -67,7 +60,7 @@ shinyApp(ui = ui, server = server)
 ```
 
 ## Defect Trends Histogram  
-This histogram summarizes Informedb's bug reporting and updating. "Date Created" is the day that the bug was reported in Jira. "Date Updated" is the last day that the bug was edited in Jira. "Date Resolved" is the last time the bug was edited *if* it was marked as resolved. 
+This histogram summarizes the project's bug reporting and updating. "Date Created" is the day that the bug was reported in Jira. "Date Updated" is the last day that the bug was edited in Jira. "Date Resolved" is the last time the bug was edited *if* it was marked as resolved. 
   
   
 ```{r histogram, echo=FALSE}
@@ -364,10 +357,10 @@ It is important to note that no number or "quality metric" should be used to qua
 
 This analysis is still in progress and it would be hasty to come to any conclusion given that I am in a data-poor situation. A new extension is currently being added to Jira so that more relevant data can be exported.  
 
-Unfortunately, there are some signs that there are some errors in the reporting process. For instance, a very large portion of issues were all updated on the same day. Did Informedb have a few extremely productive days? Or is there a chance that many projects were already completed, but marked as incomplete, then all moved on the same day?  
-The best insight I can offer with the current analysis is that when a project is assigned, the project is finished *so* much more efficiently. This could be because Assigned projects have already been started, because assigned projects were deemed a higher priority, or for many other reasons I haven't listed. However, if a bug needs to be addressed, the best way to make sure that it gets finished is to make sure someone is assigned to it.  
+Unfortunately, there are some signs that there are some errors in the reporting process. For instance, a very large portion of issues were all updated on the same day. Did the project have a few extremely productive days? Or is there a chance that many projects were already completed, but marked as incomplete, then all moved on the same day?  
+The best insight I can offer with the current analysis is that when a project is assigned, the project is finished much more efficiently. This could be because Assigned projects have already been started, because assigned projects were deemed a higher priority, or for many other reasons I haven't listed. However, if a bug needs to be addressed, the best way to make sure that it gets finished is to make sure someone is assigned to it.  
 
-This project feels raw largely because it does not indicate the quality of the code. Without some way to connect the bugs to their section of code they work on, it would be impossible for anyone to know from Jira if the Informedb code produces bugs or not.  
+This project feels raw largely because it does not indicate the quality of the code. Without some way to connect the bugs to their section of code they work on, it would be impossible for anyone to know from Jira if the the project code produces bugs or not.  
 
 ## Application  
 Recording information timely and accurately can help SimVentions give accurate and impressive reports to the military when the team is trying to earn contracts. Reflecting that the team can accurately reflect its code coverage and defect trends shows to another party that SimVentions is capable of impressing.
